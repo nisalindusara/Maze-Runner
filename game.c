@@ -7,6 +7,14 @@ Cell cells[NUM_OF_FLOORS][MAX_WIDTH][MAX_LENGTH];
 
 int game_round = 0;
 
+void mark_cells(int floor, int start_w, int end_w, int start_l, int end_l, bool is_valid, CellType type) {
+    for(int w = start_w; w <= end_w; w++)
+        for(int l = start_l; l <= end_l; l++) {
+            cells[floor][w][l].is_valid = is_valid;
+            if(cells[floor][w][l].is_valid) cells[floor][w][l].celltype = type;
+        }
+}
+
 void init_cells()
 {
     for(int floor = 0; floor < NUM_OF_FLOORS; floor++)
@@ -22,39 +30,10 @@ void init_cells()
             }
         }
     }
-    //Initializing the stariting area on floor 0
-    for(int width = 6; width < 10; width++)
-    {
-        for(int length = 8; length < 17; length++)
-        {
-            cells[0][width][length].celltype = STARTING_AREA;
-            //no SpecialCellData for celltype STARTING_AREA
-        }
-    }
-    //Initializing the invalid area in floor 1
-    for(int width = 0; width < 6; width++)
-    {
-        for(int length = 8; length < 17; length++)
-        {
-            cells[1][width][length].is_valid = false;
-        }
-    }
-    //Initializing the first invalid area in floor 2
-    for(int width = 0; width < MAX_WIDTH; width++)
-    {
-        for(int length = 0; length < 8; length++)
-        {
-            cells[1][width][length].is_valid = false;
-        }
-    }
-    //Initializing the second invalid area in floor 2
-    for(int width = 0; width < MAX_WIDTH; width++)
-    {
-        for(int length = 17; length < MAX_LENGTH; length++)
-        {
-            cells[1][width][length].is_valid = false;
-        }
-    }
+    mark_cells(0, 6, 9, 8, 16, true, STARTING_AREA);
+    mark_cells(1, 0, 5, 8, 16, false, NONE);
+    mark_cells(2, 6, 9, 0, 7, false, NONE);
+    mark_cells(2, 6, 9, 17, 24, false, NONE);
 }
 
 void init_players()
@@ -80,19 +59,17 @@ void init_players()
     read input data, validate each line while updating the relevant cells
 */
 
-typedef enum {INVALID_NUM_DIGITS, NO_DIGITS, FILE_NOT_OPEN, EMPTY_FILE, INVALID_FORMAT_LINE} FILE_ERRORS;
-
-void print_file_error(FILE_ERRORS error, char filename[], FILE *logfile)
+void print_file_error(FileErrors error, char filename[], FILE *logfile)
 {
     switch(error)
     {
-        case FILE_NOT_OPEN:fprintf(logfile, "[ERROR] Cannot open (file: %s)", filename);break;
+        case FILE_NOT_OPEN:fprintf(logfile, "[ERROR] Cannot open (file: %s)\n", filename);break;
         case EMPTY_FILE:fprintf(logfile, "[ERROR] File is empty (file: %s). No data to process.\n", filename);break;
         default: fprintf(logfile, "[WARN] Unhandled file error detected. Execution may be unstable.\n");break;
     }
 }
 
-void print_file_error_line(FILE_ERRORS error, char filename[], FILE *logfile, int line_number)
+void print_file_error_line(FileErrors error, char filename[], FILE *logfile, int line_number)
 {
     switch (error)
     {
@@ -103,40 +80,86 @@ void print_file_error_line(FILE_ERRORS error, char filename[], FILE *logfile, in
     }
 }
 
-void check_digits(int* digits, int count)
+void print_range_error(RangeError error, char filename[], FILE* logfile, int line_number)
+{
+    switch(error)
+    {
+        case START_FLOOR:fprintf(logfile, "[WARN] Range error on start floor (file %s, line %d). Line skipped.\n", filename, line_number);break;
+        case END_FLOOR:fprintf(logfile, "[WARN] Range error on end floor (file %s, line %d). Line skipped.\n", filename, line_number);break;
+        case START_WIDTH:fprintf(logfile, "[WARN] Range error on start width (file %s, line %d). Line skipped.\n", filename, line_number);break;
+        case START_LENGTH:fprintf(logfile, "[WARN] Range error on start length (file %s, line %d). Line skipped.\n", filename, line_number);break;
+        case END_WIDTH:fprintf(logfile, "[WARN] Range error on end width (file %s, line %d). Line skipped.\n", filename, line_number);break;
+        case END_LENGTH:fprintf(logfile, "[WARN] Range error on end length (file %s, line %d). Line skipped.\n", filename, line_number);break;
+        case WIDTH:fprintf(logfile, "[WARN] Range error on width (file %s, line %d). Line skipped.\n", filename, line_number);break;
+        case LENGTH:fprintf(logfile, "[WARN] Range error on length (file %s, line %d). Line skipped.\n", filename, line_number);break;
+        default: fprintf(logfile, "[WARN] Unhandled file error detected. Execution may be unstable.\n");break;
+    }
+}
+
+void load_stairs(int* digits, char filename[], FILE* logfile, int num_lines)
+{
+    if( *(digits)<0 || *(digits)>1 ) print_range_error(START_FLOOR, filename, logfile, num_lines); return;
+    if( *(digits + 1)<0 || *(digits + 1)>=MAX_WIDTH ) print_range_error(START_WIDTH, filename, logfile, num_lines); return;
+    if( *(digits + 2)<0 || *(digits + 2)>=MAX_LENGTH ) print_range_error(START_LENGTH, filename, logfile, num_lines); return;
+    if( *(digits + 3)!=1 || *(digits + 3)!=2 ) print_range_error(END_FLOOR, filename, logfile, num_lines); return;
+    if( *(digits + 4)<0 || *(digits + 4)>=MAX_WIDTH ) print_range_error(END_WIDTH, filename, logfile, num_lines); return;
+    if( *(digits + 5)<0 || *(digits + 5)>=MAX_LENGTH ) print_range_error(END_LENGTH, filename, logfile, num_lines); return;
+
+    //Handle conditions, return if a condition is false, if get to the last statement add the stair
+}
+void load_walls(int* digits, char filename[], FILE* logfile, int num_lines)
+{
+    if( *(digits)<0 || *(digits)>2 ) print_range_error(START_FLOOR, filename, logfile, num_lines); return;
+    if( *(digits + 1)<0 || *(digits + 1)>=MAX_WIDTH ) print_range_error(START_WIDTH, filename, logfile, num_lines); return;
+    if( *(digits + 2)<0 || *(digits + 2)>=MAX_LENGTH ) print_range_error(START_LENGTH, filename, logfile, num_lines); return;
+    if( *(digits + 3)<0 || *(digits + 1)>=MAX_WIDTH ) print_range_error(END_WIDTH, filename, logfile, num_lines); return;
+    if( *(digits + 4)<0 || *(digits + 2)>=MAX_LENGTH ) print_range_error(END_LENGTH, filename, logfile, num_lines); return;
+
+    //Handle conditions, return if a condition is false, if get to the last statement add the walls
+}
+void load_poles(int* digits, char filename[], FILE* logfile, int num_lines)
+{
+    if( *(digits)!=1 || *(digits)!=0 ) print_range_error(START_FLOOR, filename, logfile, num_lines); return;
+    if( *(digits + 1)!=1 || *(digits + 1)!=2 ) print_range_error(END_FLOOR, filename, logfile, num_lines); return;
+    if( *(digits + 2)<0 || *(digits + 2)>=MAX_WIDTH ) print_range_error(WIDTH, filename, logfile, num_lines); return;
+    if( *(digits + 3)<0 || *(digits + 3)>=MAX_LENGTH ) print_range_error(WIDTH, filename, logfile, num_lines); return;
+
+    //Handle conditions, return if a condition is false, if get to the last statement add the pole
+}
+
+void check_digits(int* digits, int count, char filename[], FILE* logfile, int num_lines)
 {
     switch(count)
     {
         case 6:
             printf("Will load stairs\n");
-            //load_stairs()
+            load_stairs(digits, filename, logfile, num_lines);
             break;
         case 5:
             printf("Will load walls\n");
-            //load_walls()
+            load_walls(digits, filename, logfile, num_lines);
             break;
         case 4:
             printf("Will load poles\n");
-            //load_poles()
+            load_poles(digits, filename, logfile, num_lines);
             break;
         default:
-            printf("Need to handle the error of invalid number of digits in a line\n");
-            //handle invalid number of digits
+            print_file_error_line(INVALID_NUM_DIGITS, filename, logfile, num_lines);
     }
 }
 
-int parse_and_process_line(const char* line)
+int parse_and_process_line(const char* line, char filename[], FILE* logfile, int num_lines)
 {
     const char* p =  line;
     
-    while(isspace(*p)) p++;     //Removes whitespaces at the start of the line
+    while(isspace(*p)) p++;     
     
-    if(*p != '[') return 0;     //Must start with '['
+    if(*p != '[') return 0;     
     
     p++;
     
     int count = 0;
-    int digits_array[100];
+    int digits_array[7];
     
     while(*p && *p != ']')
     {
@@ -151,13 +174,13 @@ int parse_and_process_line(const char* line)
             p++;
         }
         
-        if(count >= 100) return 0;
+        if(count >= 7) return 0;
         digits_array[count++] = num;
         
         while(isspace(*p)) p++;
         
         if(*p == ',') p++;
-        else if(*p != ']') return 0;    //Must close with ']'
+        else if(*p != ']') return 0;
     }
 
     if(*p != ']') return 0;
@@ -170,12 +193,11 @@ int parse_and_process_line(const char* line)
 
     if(count > 0)
     {
-        check_digits(digits_array, count);
+        check_digits(digits_array, count, filename, logfile, num_lines);
     }
     else
     {
-        printf("Hanlde the error of no digits within the []\n");
-        //handle no digit error
+        print_file_error_line(NO_DIGITS, filename, logfile, num_lines);
     }
     
     return 1;
@@ -183,37 +205,36 @@ int parse_and_process_line(const char* line)
 
 int read_data(char filename[])
 {
-    FILE* logf = fopen(filename, "a");
-    if(logf == NULL)    //File not opening error for log file
-    {
-        perror("log.txt file can't be opened.\nThe game will try to continue without log.txt");
-    }
+    FILE* logf = fopen("log.txt", "a");
+    if(logf == NULL) perror("log.txt crashed!");
+    
     FILE* dataf = fopen(filename, "r");
-    if(dataf == NULL)   //File not opening error for the filename
+    if(dataf == NULL)  
     {
-        fprintf(logf, "The %s file can't be opened.\n", filename);
-        exit(1);
+        print_file_error(FILE_NOT_OPEN, filename, logf);
+        // exit(1);
+        return 0;
     }
 
-    int ch = fgetc(dataf);      //check if the file is empty
+    int ch = fgetc(dataf);
     if (ch == EOF) 
     {
-        fprintf(logf, "The %s file is empty. No data to read.\n", filename);
-        exit(1);
+        print_file_error(EMPTY_FILE, filename, logf);
+        // exit(1);
+        return 0;
     }
 
-    rewind(dataf);   //Reset file pointer to back to start
+    rewind(dataf);  
 
-    char buffer[1024];  //to hold a each line read from the file
+    char buffer[1024]; 
     int line_num = 1;
 
-    while(fgets(buffer, sizeof(buffer), dataf))     //reads one line from dataf to the buffer at most sizeof(buffer)-1(for null termination), loop continues until fgets() returns Null which means EOF or error
+    while(fgets(buffer, sizeof(buffer), dataf))     
     {
-        buffer[strcspn(buffer, "\n")] = '\0';       //finds the index of the first '\n' in the line and replace it with '\0'. Removes the trailing new line from the line so "123\n" becomes "123"
-        if(!parse_and_process_line(buffer))
+        buffer[strcspn(buffer, "\n")] = '\0';       
+        if(!parse_and_process_line(buffer, filename, logf, line_num))
         {
-            printf("Invalidly formatted line printed\n");
-            //handle invalid line
+            print_file_error_line(INVALID_FORMAT_LINE, filename, logf, line_num);
         }
         line_num++;
     }
@@ -221,9 +242,18 @@ int read_data(char filename[])
     fclose(dataf);
     return 1;
 }
+
 /*
     initiate the move function
 */
+
 //for compilation purpose only
 int main()
-{}
+{
+    init_cells();
+    init_players();
+    read_data("poles.txt");
+    read_data("stairs.txt");
+    read_data("walls.txt");
+    printf("No errors so far!\n");
+}

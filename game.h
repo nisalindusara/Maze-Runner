@@ -15,12 +15,16 @@
 #define MAX_LENGTH 25
 
 //Enum declarations
-typedef enum {NORMAL_CONSUMABLE, NORMAL_BONUS, WALL, STAIR_START, STAIR_END, POLE_ENTER, POLE_EXIT, STARTING_AREA, FLAG,
+typedef enum {NONE, NORMAL_CONSUMABLE, NORMAL_BONUS, WALL, STAIR_START, STAIR_END, POLE_ENTER, POLE_EXIT, STARTING_AREA, FLAG,
                 BHAWANA} CellType;
 typedef enum {BONUS, FOOD_POISONING, TRIGGER, HAPPY, DISORIENT} BhawanaCellType;
 typedef enum {NORTH, SOUTH, EAST, WEST, UNCHANGED} Direction;
 typedef enum {ACTIVE, BLOCKED, INACTIVE} PlayerState;
 typedef enum {UPDOWN, UP, DOWN} StairDirection;
+
+typedef enum {INVALID_NUM_DIGITS, NO_DIGITS, FILE_NOT_OPEN, EMPTY_FILE, INVALID_FORMAT_LINE} FileErrors;
+typedef enum {START_FLOOR, END_FLOOR, START_WIDTH, END_WIDTH, START_LENGTH, END_LENGTH, WIDTH, LENGTH} RangeError;
+typedef enum {START_FLOOR_LARGE} ConditionErrors;
 
 //Structures and Unions declarations
 typedef struct{
