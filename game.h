@@ -3,8 +3,10 @@
 
 //Library inclusion 
 #include <stdlib.h>
-#include <time.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
 
 //MACROS
 #define NUM_OF_PLAYERS 3
@@ -28,12 +30,17 @@ typedef struct{
 } TeleportData;
 
 typedef struct{
+    int num_of_stairs;
+    TeleportData stairs[2];
+} StairData;
+typedef struct{
     char factor;
     int value;
 } MovementPointData;
 typedef union 
 {
-    TeleportData teleport;
+    TeleportData pole;
+    StairData stair;
     MovementPointData movementpoint;
 } SpecialCellData;
 typedef struct{
