@@ -6,24 +6,21 @@
 #include <time.h>
 #include <stdbool.h>
 
+//MACROS
+#define NUM_OF_PLAYERS 3
+#define NUM_OF_FLOORS 3
+#define MAX_WIDTH 10
+#define MAX_LENGTH 25
+
 //Enum declarations
 typedef enum {NORMAL_CONSUMABLE, NORMAL_BONUS, WALL, STAIR_START, STAIR_END, POLE_ENTER, POLE_EXIT, STARTING_AREA, FLAG,
                 BHAWANA} CellType;
-typedef enum {NORMAL_BONUS, FOOD_POISONING, TRIGGER, HAPPY, DISORIENT} BhawanaCellType;
+typedef enum {BONUS, FOOD_POISONING, TRIGGER, HAPPY, DISORIENT} BhawanaCellType;
 typedef enum {NORTH, SOUTH, EAST, WEST, UNCHANGED} Direction;
-typedef enum {ACTIVE, BLOCKED, STARTING_AREA} PlayerState;
+typedef enum {ACTIVE, BLOCKED, INACTIVE} PlayerState;
 typedef enum {UPDOWN, UP, DOWN} StairDirection;
 
-//Union declarations
-
-typedef union 
-{
-    TeleportData teleport;
-    MovementPointData movementpoint;
-} SpecialCellData;
-
-//Structure declarations
-
+//Structures and Unions declarations
 typedef struct{
     int dest_floor;
     int dest_width;
@@ -34,7 +31,11 @@ typedef struct{
     char factor;
     int value;
 } MovementPointData;
-
+typedef union 
+{
+    TeleportData teleport;
+    MovementPointData movementpoint;
+} SpecialCellData;
 typedef struct{
     int floor;
     int width;
@@ -56,5 +57,7 @@ typedef struct{
 
 //Variable declarations
 extern int game_round;
+extern Player players[NUM_OF_PLAYERS];
+extern Cell cells[NUM_OF_FLOORS][MAX_WIDTH][MAX_LENGTH];
 
 #endif
