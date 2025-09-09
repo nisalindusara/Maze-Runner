@@ -11,7 +11,7 @@ void mark_cells(int floor, int start_w, int end_w, int start_l, int end_l, bool 
     for(int w = start_w; w <= end_w; w++)
         for(int l = start_l; l <= end_l; l++) {
             cells[floor][w][l].is_valid = is_valid;
-            if(cells[floor][w][l].is_valid) cells[floor][w][l].celltype = type;
+            if(cells[floor][w][l].is_valid) cells[floor][w][l].celltypes = type;
         }
 }
 
@@ -27,13 +27,14 @@ void init_cells()
                 cells[floor][width][length].width = width;
                 cells[floor][width][length].length = length;
                 cells[floor][width][length].is_valid = true;
+                cells[floor][width][length].is_complex = false;
             }
         }
     }
-    mark_cells(0, 6, 9, 8, 16, true, STARTING_AREA);
-    mark_cells(1, 0, 5, 8, 16, false, NONE);
-    mark_cells(2, 6, 9, 0, 7, false, NONE);
-    mark_cells(2, 6, 9, 17, 24, false, NONE);
+    mark_cells(0, 6, 9, 8, 16, true, CELL_STARTING_AREA);
+    mark_cells(1, 0, 5, 8, 16, false, CELL_NONE);
+    mark_cells(2, 6, 9, 0, 7, false, CELL_NONE);
+    mark_cells(2, 6, 9, 17, 24, false, CELL_NONE);
 }
 
 void init_players()
@@ -63,9 +64,14 @@ void print_file_error(FileErrors error, char filename[], FILE *logfile)
 {
     switch(error)
     {
-        case FILE_NOT_OPEN:fprintf(logfile, "[ERROR] Cannot open (file: %s)\n", filename);break;
-        case EMPTY_FILE:fprintf(logfile, "[ERROR] File is empty (file: %s). No data to process.\n", filename);break;
-        default: fprintf(logfile, "[WARN] Unhandled file error detected. Execution may be unstable.\n");break;
+        case FILE_NOT_OPEN:
+            fprintf(logfile, "[ERROR] Cannot open (file: %s)\n", filename);
+            break;
+        case EMPTY_FILE:
+            fprintf(logfile, "[ERROR] File is empty (file: %s). No data to process.\n", filename);
+            break;
+        default:
+            fprintf(logfile, "[WARN] Unhandled file error detected. Execution may be unstable.\n");
     }
 }
 
@@ -73,10 +79,17 @@ void print_file_error_line(FileErrors error, char filename[], FILE *logfile, int
 {
     switch (error)
     {
-        case INVALID_NUM_DIGITS:fprintf(logfile, "[WARN] Invalid number of digits (file %s, line %d). Line skipped.\n", filename, line_number);break;
-        case NO_DIGITS:fprintf(logfile, "[WARN] No digits found (file %s, line %d). Line skipped\n", filename, line_number);break;
-        case INVALID_FORMAT_LINE:fprintf(logfile, "[WARN] Invalid format (file %s, line %d). Line skipped.\n", filename, line_number);break;
-        default: fprintf(logfile, "[WARN] Unhandled file error detected. Execution may be unstable.\n");break;
+        case INVALID_NUM_DIGITS:
+            fprintf(logfile, "[WARN] Invalid number of digits (file %s, line %d). Line skipped.\n", filename, line_number);
+            break;
+        case NO_DIGITS:
+            fprintf(logfile, "[WARN] No digits found (file %s, line %d). Line skipped\n", filename, line_number);
+            break;
+        case INVALID_FORMAT_LINE:
+            fprintf(logfile, "[WARN] Invalid format (file %s, line %d). Line skipped.\n", filename, line_number);
+            break;
+        default: 
+            fprintf(logfile, "[WARN] Unhandled file error detected. Execution may be unstable.\n");
     }
 }
 
@@ -84,47 +97,249 @@ void print_range_error(RangeError error, char filename[], FILE* logfile, int lin
 {
     switch(error)
     {
-        case START_FLOOR:fprintf(logfile, "[WARN] Range error on start floor (file %s, line %d). Line skipped.\n", filename, line_number);break;
-        case END_FLOOR:fprintf(logfile, "[WARN] Range error on end floor (file %s, line %d). Line skipped.\n", filename, line_number);break;
-        case START_WIDTH:fprintf(logfile, "[WARN] Range error on start width (file %s, line %d). Line skipped.\n", filename, line_number);break;
-        case START_LENGTH:fprintf(logfile, "[WARN] Range error on start length (file %s, line %d). Line skipped.\n", filename, line_number);break;
-        case END_WIDTH:fprintf(logfile, "[WARN] Range error on end width (file %s, line %d). Line skipped.\n", filename, line_number);break;
-        case END_LENGTH:fprintf(logfile, "[WARN] Range error on end length (file %s, line %d). Line skipped.\n", filename, line_number);break;
-        case WIDTH:fprintf(logfile, "[WARN] Range error on width (file %s, line %d). Line skipped.\n", filename, line_number);break;
-        case LENGTH:fprintf(logfile, "[WARN] Range error on length (file %s, line %d). Line skipped.\n", filename, line_number);break;
-        default: fprintf(logfile, "[WARN] Unhandled file error detected. Execution may be unstable.\n");break;
+        case START_FLOOR:
+            fprintf(logfile, "[WARN] Range error on start floor (file %s, line %d). Line skipped.\n", filename, line_number);
+            break;
+        case END_FLOOR:
+            fprintf(logfile, "[WARN] Range error on end floor (file %s, line %d). Line skipped.\n", filename, line_number);
+            break;
+        case START_WIDTH:
+            fprintf(logfile, "[WARN] Range error on start width (file %s, line %d). Line skipped.\n", filename, line_number);
+            break;
+        case START_LENGTH:
+            fprintf(logfile, "[WARN] Range error on start length (file %s, line %d). Line skipped.\n", filename, line_number);
+            break;
+        case END_WIDTH:
+            fprintf(logfile, "[WARN] Range error on end width (file %s, line %d). Line skipped.\n", filename, line_number);
+            break;
+        case END_LENGTH:
+            fprintf(logfile, "[WARN] Range error on end length (file %s, line %d). Line skipped.\n", filename, line_number);
+            break;
+        case WIDTH:
+            fprintf(logfile, "[WARN] Range error on width (file %s, line %d). Line skipped.\n", filename, line_number);
+            break;
+        case LENGTH:
+            fprintf(logfile, "[WARN] Range error on length (file %s, line %d). Line skipped.\n", filename, line_number);
+            break;
+        default: 
+            fprintf(logfile, "[WARN] Unhandled file error detected. Execution may be unstable.\n");
     }
+}
+
+bool check_cell_types(Cell *c, int types) 
+{
+    return (c->celltypes & types) != 0;
+}
+void add_cell_type(Cell *c, int type)
+{
+    c->celltypes |= type;
 }
 
 void load_stairs(int* digits, char filename[], FILE* logfile, int num_lines)
 {
-    if( *(digits)<0 || *(digits)>1 ) print_range_error(START_FLOOR, filename, logfile, num_lines); return;
-    if( *(digits + 1)<0 || *(digits + 1)>=MAX_WIDTH ) print_range_error(START_WIDTH, filename, logfile, num_lines); return;
-    if( *(digits + 2)<0 || *(digits + 2)>=MAX_LENGTH ) print_range_error(START_LENGTH, filename, logfile, num_lines); return;
-    if( *(digits + 3)!=1 || *(digits + 3)!=2 ) print_range_error(END_FLOOR, filename, logfile, num_lines); return;
-    if( *(digits + 4)<0 || *(digits + 4)>=MAX_WIDTH ) print_range_error(END_WIDTH, filename, logfile, num_lines); return;
-    if( *(digits + 5)<0 || *(digits + 5)>=MAX_LENGTH ) print_range_error(END_LENGTH, filename, logfile, num_lines); return;
+    int start_floor = digits[0], start_width_num = digits[1], start_length_num = digits[2];
+    int end_floor = digits[3], end_width_num = digits[4], end_length_num = digits[5];
 
+    if( start_floor<0 || start_floor>1 ) 
+    {
+        print_range_error(START_FLOOR, filename, logfile, num_lines); 
+        return;
+    }
+    if( start_width_num<0 || start_width_num>=MAX_WIDTH ) 
+    {
+        print_range_error(START_WIDTH, filename, logfile, num_lines); 
+        return;
+    }
+    if( start_length_num<0 || start_length_num>=MAX_LENGTH ) 
+    {
+        print_range_error(START_LENGTH, filename, logfile, num_lines); 
+        return;
+    }
+    if( end_floor!=1 || end_floor!=2 ) 
+    {
+        print_range_error(END_FLOOR, filename, logfile, num_lines); 
+        return;
+    }
+    if( end_width_num<0 || end_width_num>=MAX_WIDTH ) 
+    {
+        print_range_error(END_WIDTH, filename, logfile, num_lines); 
+        return;
+    }
+    if( end_length_num<0 || end_length_num>=MAX_LENGTH ) 
+    {
+        print_range_error(END_LENGTH, filename, logfile, num_lines); 
+        return;
+    }
     //Handle conditions, return if a condition is false, if get to the last statement add the stair
+    if(start_floor >= end_floor)
+    {
+        return;
+    }
+    if( cells[start_floor][start_width_num][start_length_num].is_valid==false ||
+        check_cell_types(&cells[start_floor][start_width_num][start_length_num], CELL_STARTING_AREA | CELL_BHAWANA))
+    {
+        return;
+    }
+    if(cells[end_floor][end_width_num][end_length_num].is_valid==false)
+    {
+        return;
+    }
+    //add to the cell
+    add_cell_type(&cells[start_floor][start_width_num][start_length_num], CELL_STAIR_START);
+    add_cell_type(&cells[end_floor][end_width_num][end_length_num], CELL_STAIR_END);
 }
+
+int check_wall_init_conditions(Cell* cell)
+{
+    if(cell->is_valid == true && check_cell_types(cell, CELL_FLAG | CELL_STAIR_START | CELL_STAIR_END | CELL_POLE_ENTER | CELL_POLE_EXIT))
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 void load_walls(int* digits, char filename[], FILE* logfile, int num_lines)
 {
-    if( *(digits)<0 || *(digits)>2 ) print_range_error(START_FLOOR, filename, logfile, num_lines); return;
-    if( *(digits + 1)<0 || *(digits + 1)>=MAX_WIDTH ) print_range_error(START_WIDTH, filename, logfile, num_lines); return;
-    if( *(digits + 2)<0 || *(digits + 2)>=MAX_LENGTH ) print_range_error(START_LENGTH, filename, logfile, num_lines); return;
-    if( *(digits + 3)<0 || *(digits + 1)>=MAX_WIDTH ) print_range_error(END_WIDTH, filename, logfile, num_lines); return;
-    if( *(digits + 4)<0 || *(digits + 2)>=MAX_LENGTH ) print_range_error(END_LENGTH, filename, logfile, num_lines); return;
+    int floor = digits[0], start_width_num = digits[1], start_length_num = digits[2];
+    int end_width_num = digits[3], end_length_num = digits[4];
 
-    //Handle conditions, return if a condition is false, if get to the last statement add the walls
+    if( floor<0 || floor>2 ) 
+    {
+        print_range_error(START_FLOOR, filename, logfile, num_lines); 
+        return;
+    }
+    if( start_width_num<0 || start_width_num>=MAX_WIDTH ) 
+    {
+        print_range_error(START_WIDTH, filename, logfile, num_lines); 
+        return;
+    }
+    if( start_length_num<0 || start_length_num>=MAX_LENGTH ) 
+    {
+        print_range_error(START_LENGTH, filename, logfile, num_lines); 
+        return;
+    }
+    if( end_width_num<0 || end_width_num>=MAX_WIDTH ) 
+    {
+        print_range_error(END_WIDTH, filename, logfile, num_lines); 
+        return;
+    }
+    if( end_length_num<0 || end_length_num>=MAX_LENGTH ) 
+    {
+        print_range_error(END_LENGTH, filename, logfile, num_lines); 
+        return;
+    }
+    //Handle conditions
+    if(start_width_num == end_width_num)
+    {
+        if(start_length_num == end_length_num)  //single cell wall
+        {
+            if(check_wall_init_conditions(&cells[floor][start_width_num][start_length_num]))
+            {
+                add_cell_type(&cells[floor][start_width_num][start_length_num], CELL_WALL);
+            }
+            else return;
+        }
+        else    //horizontal wall
+        {
+            if(start_length_num > end_length_num)   
+            {
+                for(int length = start_length_num; length <= end_length_num; length--)   
+                {
+                    if(check_wall_init_conditions(&cells[floor][start_width_num][length]))
+                    {
+                        add_cell_type(&cells[floor][start_width_num][length], CELL_WALL);
+                    }
+                    else return;
+                }
+            }
+            else
+            {
+                for(int length = start_length_num; length <= end_length_num; length++)  
+                {
+                    if(check_wall_init_conditions(&cells[floor][start_width_num][length]))
+                    {
+                        add_cell_type(&cells[floor][start_width_num][length], CELL_WALL);
+                    }
+                    else return;
+                }
+            }
+        }
+    }
+    if(start_length_num == end_length_num)  //vertical wall
+    {
+        if(start_width_num > end_width_num)
+        {
+            for(int width = start_width_num; width <= end_width_num; width--)   
+            {
+                if(check_wall_init_conditions(&cells[floor][width][start_length_num]))
+                {
+                    add_cell_type(&cells[floor][width][start_length_num], CELL_WALL);
+                }
+                else return;
+            }
+        }
+        else
+        {
+            for(int width = start_width_num; width <= end_width_num; width++)   
+            {
+                if(check_wall_init_conditions(&cells[floor][width][start_length_num]))
+                {
+                    add_cell_type(&cells[floor][width][start_length_num], CELL_WALL);
+                }
+                else return;
+            }
+        }
+    }    
 }
+
 void load_poles(int* digits, char filename[], FILE* logfile, int num_lines)
 {
-    if( *(digits)!=1 || *(digits)!=0 ) print_range_error(START_FLOOR, filename, logfile, num_lines); return;
-    if( *(digits + 1)!=1 || *(digits + 1)!=2 ) print_range_error(END_FLOOR, filename, logfile, num_lines); return;
-    if( *(digits + 2)<0 || *(digits + 2)>=MAX_WIDTH ) print_range_error(WIDTH, filename, logfile, num_lines); return;
-    if( *(digits + 3)<0 || *(digits + 3)>=MAX_LENGTH ) print_range_error(WIDTH, filename, logfile, num_lines); return;
+    int start_floor = digits[0], end_floor = digits[1];
+    int width_num = digits[2], length_num = digits[3];
 
-    //Handle conditions, return if a condition is false, if get to the last statement add the pole
+    if( start_floor!=1 || start_floor!=0 ) 
+    {
+        print_range_error(START_FLOOR, filename, logfile, num_lines); 
+        return;
+    }
+    if( end_floor!=1 || end_floor!=2 ) 
+    {
+        print_range_error(END_FLOOR, filename, logfile, num_lines); 
+        return;
+    }
+    if( width_num<0 || width_num>=MAX_WIDTH ) 
+    {
+        print_range_error(WIDTH, filename, logfile, num_lines); 
+        return;
+    }
+    if( length_num<0 || length_num>=MAX_LENGTH ) 
+    {
+        print_range_error(LENGTH, filename, logfile, num_lines); 
+        return;
+    }
+    //Handle conditions, return _numif a condition is false, if get to the last statement add the pole
+    if(start_floor>=end_floor)
+    {
+        return;
+    }
+    if(cells[end_floor][width_num][length_num].is_valid==false)
+    {
+        return;
+    }
+    if(cells[start_floor][width_num][length_num].is_valid==false)
+    {
+        return;
+    }
+    add_cell_type(&cells[end_floor][width_num][length_num], CELL_POLE_ENTER);
+    add_cell_type(&cells[start_floor][width_num][length_num], CELL_POLE_EXIT);
+
+    if(start_floor==0 && end_floor==2 && cells[1][width_num][length_num].is_valid)
+    {
+        add_cell_type(&cells[1][width_num][length_num], CELL_POLE_EXIT);
+    }
 }
 
 void check_digits(int* digits, int count, char filename[], FILE* logfile, int num_lines)
@@ -132,15 +347,12 @@ void check_digits(int* digits, int count, char filename[], FILE* logfile, int nu
     switch(count)
     {
         case 6:
-            printf("Will load stairs\n");
             load_stairs(digits, filename, logfile, num_lines);
             break;
         case 5:
-            printf("Will load walls\n");
             load_walls(digits, filename, logfile, num_lines);
             break;
         case 4:
-            printf("Will load poles\n");
             load_poles(digits, filename, logfile, num_lines);
             break;
         default:
@@ -246,6 +458,8 @@ int read_data(char filename[])
 /*
     initiate the move function
 */
+
+
 
 //for compilation purpose only
 int main()
