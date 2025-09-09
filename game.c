@@ -6,6 +6,7 @@ Player players[NUM_OF_PLAYERS];
 Cell cells[NUM_OF_FLOORS][MAX_WIDTH][MAX_LENGTH];
 
 int game_round = 0;
+bool game_on = true;
 
 void mark_cells(int floor, int start_w, int end_w, int start_l, int end_l, bool is_valid, CellType type) {
     for(int w = start_w; w <= end_w; w++)
@@ -54,6 +55,10 @@ void init_players()
     players[0].starting_cell = players[0].player_pos = &cells[0][6][12];
     players[1].starting_cell = players[1].player_pos = &cells[0][9][8];
     players[2].starting_cell = players[2].player_pos = &cells[0][9][16];
+
+    players[0].first_cell = players[0].player_pos = &cells[0][5][12];
+    players[1].first_cell = players[1].player_pos = &cells[0][9][7];
+    players[2].first_cell = players[2].player_pos = &cells[0][9][17];
 }
 
 /*
@@ -458,7 +463,136 @@ int read_data(char filename[])
 /*
     initiate the move function
 */
+int movement_dice()
+{
+    return ((rand() % 6) + 1);
+}
 
+Direction direction_dice(Player* plyr)
+{
+    int dir =  (rand() % 6) + 1;
+    switch(dir){
+        case 1:
+            return  plyr->direction;
+        case 2:
+            return NORTH;
+        case 3:
+            return EAST;
+        case 4:
+            return SOUTH;
+        case 5:
+            return WEST;
+        case 6:
+            return plyr->direction;
+    }
+}
+
+void move_one_cell(Player* plyr, Direction dir)
+{
+    switch(dir){
+            case NORTH:
+                (plyr->player_pos->width)--; //move up
+                break;
+            case SOUTH:
+                (plyr->player_pos->width)++; //move down
+                break;
+            case EAST:
+                (plyr->player_pos->length)--; //move left
+                break;
+            case WEST:
+                (plyr->player_pos->length)++; //move right
+                break;
+        }
+}
+
+typedef enum {
+    CONTINUE_STEP,
+    ABORT_MOVE,
+    WIN_GAME
+} HandlerResult;
+
+typedef HandlerResult (*CellHandler)(Player* );
+
+HandlerResult handle_flag(Player* plyr)
+{
+    return;
+}
+
+HandlerResult handle_pole_enter(Player* plyr)
+{
+    return;
+}
+
+typedef struct
+{
+    int flag;
+    CellHandler handler;
+} CellAction;
+
+static const CellAction actions[] = {
+    { CELL_FLAG,        handle_flag },
+    { CELL_POLE_ENTER,  handle_pole_enter}
+};
+
+void moveplayer(Player* plyr)
+{
+    plyr->move_value = movement_dice();
+
+    if(plyr->player_state == ACTIVE)
+    {
+        if(plyr->throw_count % 4 ==0)
+        {
+            plyr->direction = direction_dice(plyr);
+        }
+
+        Cell* position_before_move = plyr->player_pos;
+
+        for(int step = 0; step < plyr->move_value; step++)
+        {
+            move_one_cell(plyr, plyr->direction);
+
+            if(plyr->player_pos->is_valid)
+            {
+                for(int j = 0; j < sizeof(actions)/sizeof(actions[0]); j++)
+                {
+                    if(plyr->player_pos->celltypes & actions[j].flag)
+                    {
+                        if(actions[j].handler(plyr) == CONTINUE_STEP)
+                        {
+                            break;
+                        }
+                        else if(actions[j].handler(plyr) == ABORT_MOVE)
+                        {
+                            plyr->player_pos = position_before_move;
+                            goto exit_loops;
+                        }
+                        else
+                        {
+                            game_on = false;
+                            printf("print output message for player win.\n");
+                            return;
+                        }
+                        break;  //if anything goes wrong above
+                    }   
+                }
+            }
+            else
+            {
+                plyr->player_pos = position_before_move;
+                break;
+            }
+        }
+        exit_loops:;
+        plyr->throw_count++;
+    }
+    else
+    {
+        if(plyr->move_value == 6)
+        {
+            plyr->player_pos = plyr->first_cell;
+        }
+    }
+}
 
 
 //for compilation purpose only
@@ -466,8 +600,19 @@ int main()
 {
     init_cells();
     init_players();
+
     read_data("poles.txt");
     read_data("stairs.txt");
     read_data("walls.txt");
+
+    int player_index = 0;
+    while(game_on)
+    {
+        moveplayer(&players[player_index]);
+
+        player_index = (player_index + 1) % NUM_OF_PLAYERS;
+    }
+
+    //test code
     printf("No errors so far!\n");
 }

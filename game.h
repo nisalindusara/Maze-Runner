@@ -37,12 +37,38 @@ typedef enum {
     BHAWANA_DISORIENT       = 1 << 14
 } CellType;
 
-typedef enum {NORTH, SOUTH, EAST, WEST, UNCHANGED} Direction;
-typedef enum {ACTIVE, BLOCKED, INACTIVE} PlayerState;
+typedef enum 
+{   
+    NORTH, 
+    SOUTH, 
+    EAST, 
+    WEST
+} Direction;
+
+typedef enum {ACTIVE, INACTIVE} PlayerState;
 typedef enum {UPDOWN, UP, DOWN} StairDirection;
 
-typedef enum {INVALID_NUM_DIGITS, NO_DIGITS, FILE_NOT_OPEN, EMPTY_FILE, INVALID_FORMAT_LINE} FileErrors;
-typedef enum {START_FLOOR, END_FLOOR, START_WIDTH, END_WIDTH, START_LENGTH, END_LENGTH, WIDTH, LENGTH} RangeError;
+typedef enum 
+{
+    INVALID_NUM_DIGITS, 
+    NO_DIGITS, 
+    FILE_NOT_OPEN, 
+    EMPTY_FILE, 
+    INVALID_FORMAT_LINE
+} FileErrors;
+
+typedef enum 
+{
+    START_FLOOR, 
+    END_FLOOR, 
+    START_WIDTH, 
+    END_WIDTH, 
+    START_LENGTH, 
+    END_LENGTH, 
+    WIDTH, 
+    LENGTH
+} RangeError;
+
 typedef enum {START_FLOOR_LARGE} ConditionErrors;
 
 /* -------------------- Teleports / Stairs / Movement -------------------- */
@@ -97,7 +123,8 @@ typedef struct{
 typedef struct{
     char name;
     Direction direction;
-    Cell* starting_cell;
+    Cell* first_cell;   //cell in maze 
+    Cell* starting_cell; //cell in starting area
     PlayerState player_state;
     int throw_count;
     int move_value;
