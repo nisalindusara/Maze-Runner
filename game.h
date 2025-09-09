@@ -16,7 +16,8 @@
 
 /* -------------------- Enum declarations -------------------- */
 
-typedef enum {
+typedef enum 
+{
     CELL_NONE          = 0,
     CELL_NORMAL_CONSUMABLE = 1 << 0,
     CELL_NORMAL_BONUS  = 1 << 1,
@@ -59,6 +60,7 @@ typedef enum
 
 typedef enum 
 {
+    FLOOR,
     START_FLOOR, 
     END_FLOOR, 
     START_WIDTH, 
@@ -72,17 +74,20 @@ typedef enum
 typedef enum {START_FLOOR_LARGE} ConditionErrors;
 
 /* -------------------- Teleports / Stairs / Movement -------------------- */
-typedef struct{
+typedef struct
+{
     int dest_floor;
     int dest_width;
     int dest_length;
 } TeleportData;
 
-typedef struct{
+typedef struct
+{
     int num_of_stairs;
     TeleportData stairs[2];    // 1 or 2
 } StairData;
-typedef struct{
+typedef struct
+{
     char factor;    // '+', '-', '*'
     int value;
 } MovementPointData;
@@ -93,7 +98,8 @@ typedef union
     StairData stair;
     MovementPointData movementpoint;
 } SimpleCellData;
-typedef struct {
+typedef struct 
+{
     bool has_pole;
     TeleportData pole;
 
@@ -105,22 +111,25 @@ typedef struct {
 } ComplexCellData;
 
 /* -------------------- Cell structure -------------------- */
-typedef struct{
+typedef struct
+{
     int floor;
     int width;
     int length;
     bool is_valid;
     int celltypes;
     bool is_complex;
-    union {
+    union 
+    {
         SimpleCellData simple;   // if only one special type
-        ComplexCellData *complex; // pointer if multiple types
+        ComplexCellData* complex; // pointer if multiple types
     } data;
 }Cell;
 
 /* -------------------- Player structure -------------------- */
 
-typedef struct{
+typedef struct
+{
     char name;
     Direction direction;
     Cell* first_cell;   //cell in maze 

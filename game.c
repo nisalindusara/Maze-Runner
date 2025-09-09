@@ -102,6 +102,9 @@ void print_range_error(RangeError error, char filename[], FILE* logfile, int lin
 {
     switch(error)
     {
+        case FLOOR:
+            fprintf(logfile, "[WARN] Range error on floor (file %s, line %d). Line skipped.\n", filename, line_number);
+            break;
         case START_FLOOR:
             fprintf(logfile, "[WARN] Range error on start floor (file %s, line %d). Line skipped.\n", filename, line_number);
             break;
@@ -192,6 +195,8 @@ void load_stairs(int* digits, char filename[], FILE* logfile, int num_lines)
     //add to the cell
     add_cell_type(&cells[start_floor][start_width_num][start_length_num], CELL_STAIR_START);
     add_cell_type(&cells[end_floor][end_width_num][end_length_num], CELL_STAIR_END);
+
+    //handle the data additions for each stair
 }
 
 int check_wall_init_conditions(Cell* cell)
@@ -338,12 +343,41 @@ void load_poles(int* digits, char filename[], FILE* logfile, int num_lines)
     {
         return;
     }
+
     add_cell_type(&cells[end_floor][width_num][length_num], CELL_POLE_ENTER);
     add_cell_type(&cells[start_floor][width_num][length_num], CELL_POLE_EXIT);
 
     if(start_floor==0 && end_floor==2 && cells[1][width_num][length_num].is_valid)
     {
         add_cell_type(&cells[1][width_num][length_num], CELL_POLE_EXIT);
+    }
+}
+
+void load_flag(int* digits, char filename[], FILE* logfile, int num_lines)
+{
+    int floor = digits[0];
+    int width_num = digits[1];
+    int length_num = digits[2];
+    if( floor<0 || floor>2 ) 
+    {
+        print_range_error(FLOOR, filename, logfile, num_lines); 
+        return;
+    }
+    if( width_num<0 || width_num>9 ) 
+    {
+        print_range_error(WIDTH, filename, logfile, num_lines); 
+        return;
+    }
+    if( length_num<0 || length_num>24 ) 
+    {
+        print_range_error(LENGTH, filename, logfile, num_lines); 
+        return;
+    }
+    //Init flag
+    if(cells[floor][width_num][length_num].is_valid && !check_cell_types(&cells[floor][width_num][length_num], CELL_STARTING_AREA))
+    {
+        cells[floor][width_num][length_num].celltypes = CELL_FLAG;
+        cells[floor][width_num][length_num].is_complex = false;
     }
 }
 
@@ -359,6 +393,9 @@ void check_digits(int* digits, int count, char filename[], FILE* logfile, int nu
             break;
         case 4:
             load_poles(digits, filename, logfile, num_lines);
+            break;
+        case 3:
+            load_flag(digits, filename, logfile, num_lines);
             break;
         default:
             print_file_error_line(INVALID_NUM_DIGITS, filename, logfile, num_lines);
