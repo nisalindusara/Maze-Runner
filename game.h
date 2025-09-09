@@ -76,39 +76,36 @@ typedef enum {START_FLOOR_LARGE} ConditionErrors;
 /* -------------------- Teleports / Stairs / Movement -------------------- */
 typedef struct
 {
-    int dest_floor;
-    int dest_width;
-    int dest_length;
-} TeleportData;
+    Cell* dest_cell;
+} PoleData;
 
 typedef struct
 {
-    int num_of_stairs;
-    TeleportData stairs[2];    // 1 or 2
+    StairDirection direction;
+    Cell* dest_cell;
 } StairData;
+typedef struct
+{
+    int num_of_stairs;
+    StairData stairs[2];    // 1 or 2
+} StairCellData;
 typedef struct
 {
     char factor;    // '+', '-', '*'
     int value;
 } MovementPointData;
-/* -------------------- Simple cell data / Complex cell data -------------------- */
-typedef union 
-{
-    TeleportData pole;
-    StairData stair;
-    MovementPointData movementpoint;
-} SimpleCellData;
+/* -------------------- cell data -------------------- */
 typedef struct 
 {
     bool has_pole;
-    TeleportData pole;
+    PoleData pole;
 
-    bool has_stair;
-    StairData stair;
+    bool has_stairs;
+    StairCellData stairs;
 
     bool has_movementpoint;
     MovementPointData movementpoint;
-} ComplexCellData;
+} CellData;
 
 /* -------------------- Cell structure -------------------- */
 typedef struct
@@ -118,12 +115,7 @@ typedef struct
     int length;
     bool is_valid;
     int celltypes;
-    bool is_complex;
-    union 
-    {
-        SimpleCellData simple;   // if only one special type
-        ComplexCellData* complex; // pointer if multiple types
-    } data;
+    CellData data;
 }Cell;
 
 /* -------------------- Player structure -------------------- */

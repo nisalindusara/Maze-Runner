@@ -28,7 +28,9 @@ void init_cells()
                 cells[floor][width][length].width = width;
                 cells[floor][width][length].length = length;
                 cells[floor][width][length].is_valid = true;
-                cells[floor][width][length].is_complex = false;
+                cells[floor][width][length].data.has_pole = false;
+                cells[floor][width][length].data.has_stairs = false;
+                cells[floor][width][length].data.has_movementpoint = false;
             }
         }
     }
@@ -377,7 +379,6 @@ void load_flag(int* digits, char filename[], FILE* logfile, int num_lines)
     if(cells[floor][width_num][length_num].is_valid && !check_cell_types(&cells[floor][width_num][length_num], CELL_STARTING_AREA))
     {
         cells[floor][width_num][length_num].celltypes = CELL_FLAG;
-        cells[floor][width_num][length_num].is_complex = false;
     }
 }
 
