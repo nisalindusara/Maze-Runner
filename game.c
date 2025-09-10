@@ -691,14 +691,61 @@ Cell* pick_stair_heuristic(Cell* dest1, Cell* dest2, Cell* flag) {
     return (rand() % 2) ? dest1 : dest2;
 }
 
+HandlerResult handle_stair(Player* plyr, StairDirection wrong_dir, Cell* stair0_dest_cell, Cell* stair1_dest_cell)
+{
+    Cell* cell = plyr->player_pos;
+    if(cell->data.stair_count == 1)
+    {
+        if(cell->data.stairs[0]->direction != wrong_dir)
+        {
+            plyr->player_pos = stair0_dest_cell;
+            return CONTINUE_STEP;
+        }
+        else return ABORT_MOVE;
+    }
+    else
+    {
+        if((cell->data.stairs[0]->start_cell == cell)&&(cell->data.stairs[1]->start_cell == cell))
+        {
+            if((cell->data.stairs[0]->direction != wrong_dir) && (cell->data.stairs[1]->direction != wrong_dir))
+            {
+                pick_stair_heuristic(stair0_dest_cell, stair1_dest_cell, cell_flag);
+                return CONTINUE_STEP;
+            }
+            else if(cell->data.stairs[0]->direction != wrong_dir)
+            {
+                plyr->player_pos = stair0_dest_cell;
+                return CONTINUE_STEP;
+            }
+            else if(cell->data.stairs[1]->direction != wrong_dir)
+            {
+                plyr->player_pos = stair1_dest_cell;
+                return CONTINUE_STEP;
+            }
+            else return ABORT_MOVE;
+        }
+        else if((cell->data.stairs[0]->start_cell == cell)&&(cell->data.stairs[0]->direction != wrong_dir))
+        {
+            plyr->player_pos = stair1_dest_cell;
+            return CONTINUE_STEP;
+        }
+        else if((cell->data.stairs[0]->start_cell == cell)&&(cell->data.stairs[0]->direction != wrong_dir))
+        {
+            plyr->player_pos = stair1_dest_cell;
+            return CONTINUE_STEP;
+        }
+        else return ABORT_MOVE;
+    }
+}
+
 HandlerResult handle_stair_start(Player* plyr)
 {
-    return CONTINUE_STEP;
+    return handle_stair(plyr, DOWN, plyr->player_pos->data.stairs[0]->end_cell, plyr->player_pos->data.stairs[1]->end_cell);
 }
 
 HandlerResult handle_stair_end(Player* plyr)
 {
-    return CONTINUE_STEP;
+    return handle_stair(plyr, UP, plyr->player_pos->data.stairs[0]->start_cell, plyr->player_pos->data.stairs[1]->start_cell);
 }
 
 HandlerResult handle_pole_enter(Player* plyr)
