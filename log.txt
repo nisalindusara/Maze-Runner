@@ -3,3 +3,14 @@
 [WARN] Range error on end floor (file stairs.txt, line 1). Line skipped.
 [WARN] Range error on start floor (file poles.txt, line 1). Line skipped.
 [WARN] Range error on end floor (file stairs.txt, line 1). Line skipped.
+[WARN] Range error on start floor (file poles.txt, line 1). Line skipped.
+[WARN] Range error on end floor (file stairs.txt, line 1). Line skipped.
+[WARN] Range error on start floor (file poles.txt, line 1). Line skipped.
+[WARN] Range error on end floor (file stairs.txt, line 1). Line skipped.
+[WARN] Range error on start floor (file poles.txt, line 1). Line skipped.
+[WARN] Range error on end floor (file stairs.txt, line 1). Line skipped.
+[WARN] Range error on start floor (file poles.txt, line 1). Line skipped.
+[WARN] Range error on end floor (file stairs.txt, line 1). Line skipped.
+[WARN] Range error on end floor (file poles.txt, line 1). Line skipped.
+[WARN] Range error on end floor (file poles.txt, line 1). Line skipped.
+[WARN] Range error on end floor (file poles.txt, line 1). Line skipped.

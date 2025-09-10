@@ -94,7 +94,6 @@ typedef struct
 
 typedef struct
 {
-    bool has_two_stairs;
     StairData stairs[2];    // 1 or 2
 } StairCellData;
 /* -------------------- cell data -------------------- */
@@ -103,7 +102,7 @@ typedef struct
     bool has_pole;
     PoleData pole_data;
 
-    bool has_stairs;
+    short stair_count;
     StairCellData staircelldata;
 
     bool has_movementpoint;
