@@ -129,6 +129,7 @@ typedef struct
     int throw_count;
     int move_value;
     Cell* player_pos;
+    int mp_score;
 } Player;
 
 //Variable declarations

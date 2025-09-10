@@ -56,6 +56,7 @@ void init_players()
         players[i].player_state = INACTIVE;
         players[i].throw_count = 0;
         players[i].move_value = 0;
+        players[i].mp_score = 100;
     }
     players[0].direction = NORTH;
     players[1].direction = WEST;
@@ -564,6 +565,8 @@ void read_data()
     }
 }
 
+
+
 /*
     initiate the move function
 */
@@ -795,7 +798,20 @@ static const CellAction actions[] = {                           //order matters 
     { CELL_BHAWANA,             handle_bhawana          },
 };
 
-void moveplayer(Player* plyr)
+void capture_player(int current_player_index)
+{
+    for(int p_index = 0; p_index < NUM_OF_PLAYERS; p_index++)
+    {
+        if(p_index == current_player_index) continue;
+        
+        if(players[current_player_index].player_pos == players[p_index].player_pos)
+        {
+            players[p_index].player_pos = players[p_index].starting_cell;
+        }
+    }
+}
+
+void moveplayer(Player* plyr, int player_index)
 {
     plyr->move_value = movement_dice();
 
@@ -826,7 +842,7 @@ void moveplayer(Player* plyr)
                         else if(step_result == ABORT_MOVE)
                         {
                             plyr->player_pos = position_before_move;
-                            goto exit_moving;
+                            goto partial_move;
                         }
                         else
                         {
@@ -844,8 +860,10 @@ void moveplayer(Player* plyr)
                 break;
             }
         }
-        exit_moving:;
+        capture_player(player_index);
+        partial_move:;
         plyr->throw_count++;
+
     }
     else
     {
@@ -889,7 +907,7 @@ int main()
     int max_turns = 12;
     while(game_on && (max_turns--)>0)
     {
-        moveplayer(&players[player_index]);
+        moveplayer(&players[player_index], player_index);
 
         player_index = (player_index + 1) % NUM_OF_PLAYERS;
 
