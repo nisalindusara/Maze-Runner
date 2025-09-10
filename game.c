@@ -5,6 +5,10 @@
 Player players[NUM_OF_PLAYERS];
 Cell cells[NUM_OF_FLOORS][MAX_WIDTH][MAX_LENGTH];
 
+Cell** stairs_array;
+
+Cell* cell_flag;
+
 int game_round = 0;
 bool game_on = true;
 
@@ -145,7 +149,122 @@ void add_cell_type(Cell *c, int type)
     c->celltypes |= type;
 }
 
-void load_stairs(int* digits, char filename[], FILE* logfile, int num_lines)
+void load_flag(int* digits, char filename[], FILE* logfile, int num_lines)
+{
+    int floor = digits[0];
+    int width_num = digits[1];
+    int length_num = digits[2];
+    if( floor<0 || floor>2 ) 
+    {
+        print_range_error(FLOOR, filename, logfile, num_lines); 
+        return;
+    }
+    if( width_num<0 || width_num>9 ) 
+    {
+        print_range_error(WIDTH, filename, logfile, num_lines); 
+        return;
+    }
+    if( length_num<0 || length_num>24 ) 
+    {
+        print_range_error(LENGTH, filename, logfile, num_lines); 
+        return;
+    }
+    //Init flag
+    if(cells[floor][width_num][length_num].is_valid && !check_cell_types(&cells[floor][width_num][length_num], CELL_STARTING_AREA) )
+    {
+        cells[floor][width_num][length_num].celltypes = CELL_FLAG;
+        cell_flag = &cells[floor][width_num][length_num];
+    }
+}
+
+
+void load_poles(int* digits, char filename[], FILE* logfile, int num_lines)
+{
+    int start_floor = digits[0], end_floor = digits[1];
+    int width_num = digits[2], length_num = digits[3];
+
+    if( start_floor!=1 || start_floor!=0 ) 
+    {
+        print_range_error(START_FLOOR, filename, logfile, num_lines); 
+        return;
+    }
+    if( end_floor!=1 || end_floor!=2 ) 
+    {
+        print_range_error(END_FLOOR, filename, logfile, num_lines); 
+        return;
+    }
+    if( width_num<0 || width_num>=MAX_WIDTH ) 
+    {
+        print_range_error(WIDTH, filename, logfile, num_lines); 
+        return;
+    }
+    if( length_num<0 || length_num>=MAX_LENGTH ) 
+    {
+        print_range_error(LENGTH, filename, logfile, num_lines); 
+        return;
+    }
+    //Handle conditions, return _numif a condition is false, if get to the last statement add the pole
+    if(start_floor>=end_floor)
+    {
+        return;
+    }
+    if(cells[end_floor][width_num][length_num].is_valid==false)
+    {
+        return;
+    }
+    if(cells[start_floor][width_num][length_num].is_valid==false)
+    {
+        return;
+    }
+
+    if(start_floor==0 && end_floor==2 && cells[1][width_num][length_num].is_valid == false)
+    {
+        return;
+    }
+    else
+    {
+        add_cell_type(&cells[1][width_num][length_num], CELL_POLE_ENTER);
+        cells[1][width_num][length_num].data.has_pole = true;
+        cells[1][width_num][length_num].data.pole_data.dest_cell = &cells[end_floor][width_num][length_num];
+    }
+
+    add_cell_type(&cells[end_floor][width_num][length_num], CELL_POLE_ENTER);
+    cells[end_floor][width_num][length_num].data.has_pole = true;
+    cells[end_floor][width_num][length_num].data.pole_data.dest_cell = &cells[end_floor][width_num][length_num];
+
+    add_cell_type(&cells[start_floor][width_num][length_num], CELL_POLE_EXIT);
+
+}
+
+void init_stair(Cell* current_cell, Cell* dest_cell)
+{
+    if(current_cell->data.has_stairs)
+    {
+        if(current_cell->data.staircelldata.has_two_stairs)
+        {
+            //cell already has 2 stairs
+            return;
+        }
+        else
+        {
+            //already have one stair, initialize the second stair
+            current_cell->data.staircelldata.has_two_stairs = true;
+            current_cell->data.staircelldata.stairs[1].direction = UPDOWN;
+            current_cell->data.staircelldata.stairs[1].dest_cell = dest_cell;
+        }
+    }
+    else
+    {
+        //this is going to be the first stair
+        add_cell_type(current_cell, CELL_STAIR_START);
+        current_cell->data.has_stairs = true;
+        current_cell->data.staircelldata.has_two_stairs = false;
+        current_cell->data.staircelldata.stairs[0].direction = UPDOWN;
+        current_cell->data.staircelldata.stairs[0].dest_cell = dest_cell;
+    }
+}
+
+void load_stairs(int* digits, char filename[], FILE* logfile, int num_lines, int* stair_count, int* capacity)
 {
     int start_floor = digits[0], start_width_num = digits[1], start_length_num = digits[2];
     int end_floor = digits[3], end_width_num = digits[4], end_length_num = digits[5];
@@ -185,8 +304,7 @@ void load_stairs(int* digits, char filename[], FILE* logfile, int num_lines)
     {
         return;
     }
-    if( cells[start_floor][start_width_num][start_length_num].is_valid==false ||
-        check_cell_types(&cells[start_floor][start_width_num][start_length_num], CELL_STARTING_AREA | CELL_BHAWANA))
+    if( cells[start_floor][start_width_num][start_length_num].is_valid==false)
     {
         return;
     }
@@ -194,16 +312,24 @@ void load_stairs(int* digits, char filename[], FILE* logfile, int num_lines)
     {
         return;
     }
-    //add to the cell
-    add_cell_type(&cells[start_floor][start_width_num][start_length_num], CELL_STAIR_START);
-    add_cell_type(&cells[end_floor][end_width_num][end_length_num], CELL_STAIR_END);
 
-    //handle the data additions for each stair
+    //INIT stairs
+
+    init_stair(&cells[start_floor][start_width_num][start_length_num], &cells[end_floor][end_width_num][end_length_num]);   //init startcell
+    if (stair_count >= capacity) 
+    {
+        (*capacity) *= 2;  // geometric growth
+        stairs_array = realloc(stairs_array, (*capacity) * sizeof(Cell*));
+    }
+    stairs_array[(*stair_count)++] = &cells[start_floor][start_width_num][start_length_num];
+
+    init_stair(&cells[end_floor][end_width_num][end_length_num], &cells[start_floor][start_width_num][start_length_num]);   //init end cell
 }
 
 int check_wall_init_conditions(Cell* cell)
 {
-    if(cell->is_valid == true && check_cell_types(cell, CELL_FLAG | CELL_STAIR_START | CELL_STAIR_END | CELL_POLE_ENTER | CELL_POLE_EXIT))
+    if(cell->is_valid == true && 
+        check_cell_types(cell, CELL_FLAG | CELL_STAIR_START | CELL_STAIR_END | CELL_POLE_ENTER | CELL_POLE_EXIT | CELL_BHAWANA))
     {
         return 1;
     }
@@ -280,105 +406,38 @@ void load_walls(int* digits, char filename[], FILE* logfile, int num_lines)
             }
         }
     }
-    if(start_length_num == end_length_num)  //vertical wall
+    else
     {
-        if(start_width_num > end_width_num)
+
+        if(start_length_num == end_length_num)  //vertical wall
         {
-            for(int width = start_width_num; width <= end_width_num; width--)   
+            if(start_width_num > end_width_num)
             {
-                if(check_wall_init_conditions(&cells[floor][width][start_length_num]))
+                for(int width = start_width_num; width <= end_width_num; width--)   
                 {
-                    add_cell_type(&cells[floor][width][start_length_num], CELL_WALL);
+                    if(check_wall_init_conditions(&cells[floor][width][start_length_num]))
+                    {
+                        add_cell_type(&cells[floor][width][start_length_num], CELL_WALL);
+                    }
+                    else return;
                 }
-                else return;
+            }
+            else
+            {
+                for(int width = start_width_num; width <= end_width_num; width++)   
+                {
+                    if(check_wall_init_conditions(&cells[floor][width][start_length_num]))
+                    {
+                        add_cell_type(&cells[floor][width][start_length_num], CELL_WALL);
+                    }
+                    else return;
+                }
             }
         }
-        else
-        {
-            for(int width = start_width_num; width <= end_width_num; width++)   
-            {
-                if(check_wall_init_conditions(&cells[floor][width][start_length_num]))
-                {
-                    add_cell_type(&cells[floor][width][start_length_num], CELL_WALL);
-                }
-                else return;
-            }
-        }
-    }    
-}
-
-void load_poles(int* digits, char filename[], FILE* logfile, int num_lines)
-{
-    int start_floor = digits[0], end_floor = digits[1];
-    int width_num = digits[2], length_num = digits[3];
-
-    if( start_floor!=1 || start_floor!=0 ) 
-    {
-        print_range_error(START_FLOOR, filename, logfile, num_lines); 
-        return;
-    }
-    if( end_floor!=1 || end_floor!=2 ) 
-    {
-        print_range_error(END_FLOOR, filename, logfile, num_lines); 
-        return;
-    }
-    if( width_num<0 || width_num>=MAX_WIDTH ) 
-    {
-        print_range_error(WIDTH, filename, logfile, num_lines); 
-        return;
-    }
-    if( length_num<0 || length_num>=MAX_LENGTH ) 
-    {
-        print_range_error(LENGTH, filename, logfile, num_lines); 
-        return;
-    }
-    //Handle conditions, return _numif a condition is false, if get to the last statement add the pole
-    if(start_floor>=end_floor)
-    {
-        return;
-    }
-    if(cells[end_floor][width_num][length_num].is_valid==false)
-    {
-        return;
-    }
-    if(cells[start_floor][width_num][length_num].is_valid==false)
-    {
-        return;
-    }
-
-    add_cell_type(&cells[end_floor][width_num][length_num], CELL_POLE_ENTER);
-    add_cell_type(&cells[start_floor][width_num][length_num], CELL_POLE_EXIT);
-
-    if(start_floor==0 && end_floor==2 && cells[1][width_num][length_num].is_valid)
-    {
-        add_cell_type(&cells[1][width_num][length_num], CELL_POLE_EXIT);
-    }
-}
-
-void load_flag(int* digits, char filename[], FILE* logfile, int num_lines)
-{
-    int floor = digits[0];
-    int width_num = digits[1];
-    int length_num = digits[2];
-    if( floor<0 || floor>2 ) 
-    {
-        print_range_error(FLOOR, filename, logfile, num_lines); 
-        return;
-    }
-    if( width_num<0 || width_num>9 ) 
-    {
-        print_range_error(WIDTH, filename, logfile, num_lines); 
-        return;
-    }
-    if( length_num<0 || length_num>24 ) 
-    {
-        print_range_error(LENGTH, filename, logfile, num_lines); 
-        return;
-    }
-    //Init flag
-    if(cells[floor][width_num][length_num].is_valid && !check_cell_types(&cells[floor][width_num][length_num], CELL_STARTING_AREA))
-    {
-        cells[floor][width_num][length_num].celltypes = CELL_FLAG;
+        else    //diagonal wall [NOT ALLOWED]
+        {   
+            return;
+        }    
     }
 }
 
@@ -387,7 +446,10 @@ void check_digits(int* digits, int count, char filename[], FILE* logfile, int nu
     switch(count)
     {
         case 6:
-            load_stairs(digits, filename, logfile, num_lines);
+            int stair_count = 0;
+            int capacity = 6;
+            stairs_array = malloc(capacity * sizeof(Cell*));
+            load_stairs(digits, filename, logfile, num_lines, &stair_count, &capacity);
             break;
         case 5:
             load_walls(digits, filename, logfile, num_lines);
@@ -448,6 +510,7 @@ int parse_and_process_line(const char* line, char filename[], FILE* logfile, int
 
     if(count > 0)
     {
+
         check_digits(digits_array, count, filename, logfile, num_lines);
     }
     else
@@ -525,22 +588,55 @@ Direction direction_dice(Player* plyr)
     }
 }
 
-void move_one_cell(Player* plyr, Direction dir)
+typedef enum
 {
+    NO_BOUNDS,
+    NORTH_BOUND,
+    SOUTH_BOUND,
+    EAST_BOUND,
+    WEST_BOUND
+} Bounds;
+
+Bounds move_one_cell(Player* plyr, Direction dir)
+{
+    int floor = plyr->player_pos->floor;
+    int width = plyr->player_pos->width;
+    int length = plyr->player_pos->length;
+
     switch(dir){
-            case NORTH:
-                (plyr->player_pos->width)--; //move up
-                break;
-            case SOUTH:
-                (plyr->player_pos->width)++; //move down
-                break;
-            case EAST:
-                (plyr->player_pos->length)--; //move left
-                break;
-            case WEST:
-                (plyr->player_pos->length)++; //move right
-                break;
-        }
+        case NORTH:
+            width--; //move up
+            break;
+        case SOUTH:
+            width++; //move down
+            break;
+        case EAST:
+            length--; //move left
+            break;
+        case WEST:
+            length++; //move right
+            break;
+    }
+
+    if(width < 0)
+    {
+        return NORTH_BOUND;     // [LATER] add custom output
+    }
+    else if(width == MAX_WIDTH)
+    {
+        return SOUTH_BOUND;
+    }
+    else if(length < 0)
+    {
+        return EAST_BOUND;
+    }
+    else if(length == MAX_LENGTH)
+    {
+        return WEST_BOUND;
+    }
+
+    plyr->player_pos = &cells[floor][width][length];
+    return NO_BOUNDS;
 }
 
 typedef enum {
@@ -551,14 +647,125 @@ typedef enum {
 
 typedef HandlerResult (*CellHandler)(Player* );
 
-HandlerResult handle_flag(Player* plyr)
+HandlerResult handle_normal_consumable(Player* plyr)
 {
-    return;
+    return CONTINUE_STEP;
+}
+
+HandlerResult handle_normal_bonus(Player* plyr)
+{
+    return CONTINUE_STEP;
+}
+
+HandlerResult handle_wall(Player* plyr)
+{
+    return ABORT_MOVE;
+}
+
+int score_stair(Cell* stair, Cell* flag) {
+    int floor_diff = abs(stair->floor - flag->floor);        // how far in floors
+    int manhattan = abs(stair->width - flag->width) + abs(stair->length - flag->length);  // width/length distance
+
+    int random_noise = rand() % 3;  // small random to break ties
+    int score = 2 * floor_diff + 1 * manhattan + random_noise; 
+    return score;
+}
+
+Cell* pick_stair_heuristic(Cell* dest1, Cell* dest2, Cell* flag) {
+    // Check if either leads directly to flag
+    if(dest1->floor == flag->floor && dest1->width == flag->width && dest1->length == flag->length)
+        return dest1;
+    if(dest2->floor == flag->floor && dest2->width == flag->width && dest2->length == flag->length)
+        return dest2;
+
+    int score1 = score_stair(dest1, flag);
+    int score2 = score_stair(dest2, flag);
+
+    if(score1 < score2) return dest1;
+    if(score2 < score1) return dest2;
+    
+    // tie → random
+    return (rand() % 2) ? dest1 : dest2;
+}
+
+HandlerResult handle_stair(Player* plyr, StairDirection direction)
+{
+    if(plyr->player_pos->data.staircelldata.has_two_stairs)
+    {
+        //handle 2 stairs
+        if( (plyr->player_pos->data.staircelldata.stairs[0].direction != direction) &&
+            (plyr->player_pos->data.staircelldata.stairs[1].direction != direction) )
+        {
+            plyr->player_pos = pick_stair_heuristic(plyr->player_pos->data.staircelldata.stairs[0].dest_cell, 
+                plyr->player_pos->data.staircelldata.stairs[1].dest_cell, cell_flag);
+        }
+        else
+        {
+            if( (plyr->player_pos->data.staircelldata.stairs[0].direction != direction) &&
+                (plyr->player_pos->data.staircelldata.stairs[1].direction = direction) )
+            {
+                plyr->player_pos = plyr->player_pos->data.staircelldata.stairs[0].dest_cell;
+            }
+            else
+            {
+                if( (plyr->player_pos->data.staircelldata.stairs[0].direction = direction) &&
+                    (plyr->player_pos->data.staircelldata.stairs[1].direction != direction) )
+                {
+                   plyr->player_pos = plyr->player_pos->data.staircelldata.stairs[1].dest_cell;
+                }
+                else
+                {
+                    return ABORT_MOVE;
+                }
+            }
+        }
+    }
+    else
+    {
+        if(plyr->player_pos->data.staircelldata.stairs[0].direction != DOWN)
+        {
+            plyr->player_pos = plyr->player_pos->data.staircelldata.stairs[0].dest_cell;
+        } 
+    }
+    return CONTINUE_STEP;
+}
+
+HandlerResult handle_stair_start(Player* plyr)
+{
+    return handle_stair(plyr, DOWN);
+}
+
+HandlerResult handle_stair_end(Player* plyr)
+{
+    return handle_stair(plyr, UP);
 }
 
 HandlerResult handle_pole_enter(Player* plyr)
 {
-    return;
+    plyr->player_pos = plyr->player_pos->data.pole_data.dest_cell;
+    return CONTINUE_STEP;
+}
+
+HandlerResult handle_pole_exit(Player* plyr)
+{
+    return CONTINUE_STEP;
+}
+
+HandlerResult handle_starting_area(Player* plyr)
+{
+    //can be called because a player went staright to the starting area or went through a pole or a stair. need to handle both
+    return ABORT_MOVE;
+}
+
+HandlerResult handle_flag(Player* plyr)
+{
+    return WIN_GAME;
+}
+
+HandlerResult handle_bhawana(Player* plyr)
+{
+    //[LATER]
+    return CONTINUE_STEP;
 }
 
 typedef struct
@@ -567,9 +774,17 @@ typedef struct
     CellHandler handler;
 } CellAction;
 
-static const CellAction actions[] = {
-    { CELL_FLAG,        handle_flag },
-    { CELL_POLE_ENTER,  handle_pole_enter}
+static const CellAction actions[] = {                           //order matters [CHECK]
+    { CELL_FLAG,                handle_flag },
+    { CELL_NORMAL_CONSUMABLE,   handle_normal_consumable},
+    { CELL_NORMAL_BONUS,        handle_normal_bonus},
+    { CELL_POLE_ENTER,          handle_pole_enter},
+    { CELL_STAIR_START,         handle_stair_start},
+    { CELL_STAIR_END,           handle_stair_end},
+    { CELL_WALL,                handle_wall},
+    { CELL_POLE_EXIT,           handle_pole_exit},
+    { CELL_STARTING_AREA,       handle_starting_area},
+    { CELL_BHAWANA,             handle_bhawana },
 };
 
 void moveplayer(Player* plyr)
@@ -587,7 +802,7 @@ void moveplayer(Player* plyr)
 
         for(int step = 0; step < plyr->move_value; step++)
         {
-            move_one_cell(plyr, plyr->direction);
+            if(move_one_cell(plyr, plyr->direction) != NO_BOUNDS) break;    //terminates step
 
             if(plyr->player_pos->is_valid)
             {
@@ -602,7 +817,7 @@ void moveplayer(Player* plyr)
                         else if(actions[j].handler(plyr) == ABORT_MOVE)
                         {
                             plyr->player_pos = position_before_move;
-                            goto exit_loops;
+                            goto exit_moving;
                         }
                         else
                         {
@@ -620,7 +835,7 @@ void moveplayer(Player* plyr)
                 break;
             }
         }
-        exit_loops:;
+        exit_moving:;
         plyr->throw_count++;
     }
     else
@@ -628,6 +843,7 @@ void moveplayer(Player* plyr)
         if(plyr->move_value == 6)
         {
             plyr->player_pos = plyr->first_cell;
+            plyr->player_state = ACTIVE;
         }
     }
 }
@@ -642,15 +858,18 @@ int main()
     read_data("poles.txt");
     read_data("stairs.txt");
     read_data("walls.txt");
+    read_data("flag.txt");
 
     int player_index = 0;
-    while(game_on)
+    int max_turns = 12;
+    while(game_on && (max_turns--)>0)
     {
         moveplayer(&players[player_index]);
 
         player_index = (player_index + 1) % NUM_OF_PLAYERS;
     }
 
+    free(stairs_array);
     //test code
     printf("No errors so far!\n");
 }

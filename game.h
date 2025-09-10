@@ -74,6 +74,13 @@ typedef enum
 typedef enum {START_FLOOR_LARGE} ConditionErrors;
 
 /* -------------------- Teleports / Stairs / Movement -------------------- */
+
+typedef struct Cell Cell; //forward declaration of Cell
+typedef struct
+{
+    char factor;    // '+', '-', '*'
+    int value;
+} MovementPointData;
 typedef struct
 {
     Cell* dest_cell;
@@ -84,31 +91,27 @@ typedef struct
     StairDirection direction;
     Cell* dest_cell;
 } StairData;
+
 typedef struct
 {
-    int num_of_stairs;
+    bool has_two_stairs;
     StairData stairs[2];    // 1 or 2
 } StairCellData;
-typedef struct
-{
-    char factor;    // '+', '-', '*'
-    int value;
-} MovementPointData;
 /* -------------------- cell data -------------------- */
 typedef struct 
 {
     bool has_pole;
-    PoleData pole;
+    PoleData pole_data;
 
     bool has_stairs;
-    StairCellData stairs;
+    StairCellData staircelldata;
 
     bool has_movementpoint;
-    MovementPointData movementpoint;
+    MovementPointData mpdata;
 } CellData;
 
 /* -------------------- Cell structure -------------------- */
-typedef struct
+typedef struct Cell
 {
     int floor;
     int width;

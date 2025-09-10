@@ -1,7 +1,5 @@
 
 [WARN] Range error on start floor (file poles.txt, line 1). Line skipped.
-[WARN] Range error on start floor (file poles.txt, line 2). Line skipped.
-[WARN] Invalid format (file poles.txt, line 3). Line skipped.
-[WARN] Range error on start floor (file stairs.txt, line 1). Line skipped.
-[WARN] Range error on end floor (file stairs.txt, line 2). Line skipped.
-[WARN] Range error on start floor (file walls.txt, line 1). Line skipped.
+[WARN] Range error on end floor (file stairs.txt, line 1). Line skipped.
+[WARN] Range error on start floor (file poles.txt, line 1). Line skipped.
+[WARN] Range error on end floor (file stairs.txt, line 1). Line skipped.
