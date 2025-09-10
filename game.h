@@ -88,22 +88,19 @@ typedef struct
 
 typedef struct
 {
+    Cell* start_cell;
+    Cell* end_cell;
     StairDirection direction;
-    Cell* dest_cell;
-} StairData;
+} Stair;
 
-typedef struct
-{
-    StairData stairs[2];    // 1 or 2
-} StairCellData;
 /* -------------------- cell data -------------------- */
 typedef struct 
 {
-    bool has_pole;
+    bool access_pole;
     PoleData pole_data;
 
     short stair_count;
-    StairCellData staircelldata;
+    Stair* stairs[2];
 
     bool has_movementpoint;
     MovementPointData mpdata;
