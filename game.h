@@ -36,7 +36,8 @@ typedef enum
     BHAWANA_FOOD_POISONING  = 1 << 11,
     BHAWANA_TRIGGER         = 1 << 12,
     BHAWANA_HAPPY           = 1 << 13,
-    BHAWANA_DISORIENT       = 1 << 14
+    BHAWANA_DISORIENT       = 1 << 14,
+    BHAWANA_ENTRANCE        = 1 << 15
 } CellType;
 
 typedef enum 
@@ -45,9 +46,17 @@ typedef enum
     SOUTH, 
     EAST, 
     WEST
-} Direction;
+} PlayerDirection;
 
-typedef enum {ACTIVE, INACTIVE} PlayerState;
+typedef enum 
+{
+    ACTIVE, 
+    INACTIVE, 
+    FOOD_POISONED,
+    DISORIENTED,
+    TRIGGERED
+} PlayerState;
+
 typedef enum {UPDOWN, UP, DOWN} StairDirection;
 
 typedef enum 
@@ -123,7 +132,7 @@ typedef struct Cell
 typedef struct
 {
     char name;
-    Direction direction;
+    PlayerDirection direction;
     Cell* first_cell;   //cell in maze 
     Cell* starting_cell; //cell in starting area
     PlayerState player_state;
@@ -131,6 +140,7 @@ typedef struct
     int move_value;
     Cell* player_pos;
     int mp_score;
+    int effect_turns;
 } Player;
 
 //Variable declarations

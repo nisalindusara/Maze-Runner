@@ -11,6 +11,7 @@ int stair_count = 0;            //number of stairs
 int stair_array_capacity = 6;   //initial capacity
 
 Cell* cell_flag;
+Cell* bhawana_entrance_cell_ptr;
 
 int game_round = 0;
 bool game_on = true;
@@ -385,13 +386,13 @@ void load_walls(int* digits, char filename[], FILE* logfile, int num_lines)
         {
             if(start_length_num > end_length_num)   
             {
-                for(int length = start_length_num; length <= end_length_num; length--)   
+                for(int length = start_length_num; length >= end_length_num; length--)   
                 {
                     if(check_wall_init_conditions(&cells[floor][start_width_num][length]))
                     {
                         add_cell_type(&cells[floor][start_width_num][length], CELL_WALL);
                     }
-                    else return;
+                    else break; //stop this wall, but keep loading the other walls
                 }
             }
             else
@@ -402,7 +403,7 @@ void load_walls(int* digits, char filename[], FILE* logfile, int num_lines)
                     {
                         add_cell_type(&cells[floor][start_width_num][length], CELL_WALL);
                     }
-                    else return;
+                    else break;
                 }
             }
         }
@@ -414,13 +415,13 @@ void load_walls(int* digits, char filename[], FILE* logfile, int num_lines)
         {
             if(start_width_num > end_width_num)
             {
-                for(int width = start_width_num; width <= end_width_num; width--)   
+                for(int width = start_width_num; width >= end_width_num; width--)   
                 {
                     if(check_wall_init_conditions(&cells[floor][width][start_length_num]))
                     {
                         add_cell_type(&cells[floor][width][start_length_num], CELL_WALL);
                     }
-                    else return;
+                    else break;
                 }
             }
             else
@@ -431,7 +432,7 @@ void load_walls(int* digits, char filename[], FILE* logfile, int num_lines)
                     {
                         add_cell_type(&cells[floor][width][start_length_num], CELL_WALL);
                     }
-                    else return;
+                    else break;
                 }
             }
         }
@@ -610,7 +611,7 @@ int movement_dice()
     return ((rand() % 6) + 1);
 }
 
-Direction direction_dice(Player* plyr)
+PlayerDirection direction_dice(Player* plyr)
 {
     int dir =  (rand() % 6) + 1;
     switch(dir){
@@ -638,7 +639,7 @@ typedef enum
     WEST_BOUND
 } Bounds;
 
-Bounds move_one_cell(Player* plyr, Direction dir)
+Bounds move_one_cell(Player* plyr, PlayerDirection dir)
 {
     int floor = plyr->player_pos->floor;
     int width = plyr->player_pos->width;
@@ -819,11 +820,8 @@ HandlerResult handle_flag(Player* plyr, int* ignore_val)
 
 HandlerResult handle_bhawana(Player* plyr, int* ignore_val)
 {
-    //[LATER]
-    return CONTINUE_STEP;
+    
 }
-
-
 
 typedef struct
 {
@@ -858,65 +856,123 @@ void capture_player(int current_player_index)
     }
 }
 
-void moveplayer(Player* plyr, int player_index)
+void player_to_bhawana(Player* plyr)
+{
+    plyr->player_pos = &cells[0][(rand() % 3) + 7][(rand() % 4) + 21];
+    if(check_cell_types(plyr->player_pos, BHAWANA_BONUS))
+    {
+        plyr->player_state = ACTIVE;
+        plyr->mp_score = (rand() % 91) + 10;
+        plyr->player_pos = bhawana_entrance_cell_ptr;
+    }
+    else if(check_cell_types(plyr->player_pos, BHAWANA_FOOD_POISONING))
+    {
+        plyr->player_state = FOOD_POISONED;
+        plyr->effect_turns = 3;
+    }   
+    else if(check_cell_types(plyr->player_pos, BHAWANA_DISORIENT))
+    {
+        plyr->player_state = DISORIENTED;
+        plyr->mp_score = 50;
+        plyr->player_pos = bhawana_entrance_cell_ptr;
+        plyr->effect_turns = 4;
+        //player moves in a random direction for each time for the next 4 throws, override the direction dice
+    }
+    else if(check_cell_types(plyr->player_pos, BHAWANA_TRIGGER))
+    {
+        plyr->player_state = TRIGGERED;
+        plyr->mp_score = 50;
+        plyr->player_pos = bhawana_entrance_cell_ptr;
+        //moves twices as fast(? for how many moves)
+    }
+    else if(check_cell_types(plyr->player_pos, BHAWANA_HAPPY))
+    {
+        plyr->player_state = ACTIVE;    
+        plyr->mp_score = 200;
+        plyr->player_pos = bhawana_entrance_cell_ptr;
+    }
+}
+
+PlayerDirection generate_player_direction()
+{
+    switch(rand() % 4)
+    {
+        case 0: return NORTH;
+        case 1: return SOUTH;
+        case 2: return EAST;
+        case 3: return WEST;
+    }
+}
+
+void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int player_index)
+{
+    Cell* position_before_move = plyr->player_pos;
+
+    int path_cost = 0;
+    for(int step = 0; step < plyr->move_value; step++)
+    {
+        if(move_one_cell(plyr, move_direction) != NO_BOUNDS) break;    //terminates step
+
+        if(plyr->player_pos->is_valid)
+        {
+            for(int j = 0; j < sizeof(actions)/sizeof(actions[0]); j++)
+            {
+                if(plyr->player_pos->celltypes & actions[j].flag)
+                {
+                    HandlerResult step_result = actions[j].handler(plyr, &path_cost);
+                    if(step_result == CONTINUE_STEP)
+                    {
+                        break;
+                    }
+                    else if(step_result == ABORT_MOVE)
+                    {
+                        plyr->player_pos = position_before_move;
+                        goto partial_move;
+                    }
+                    else    //game won
+                    {
+                        game_on = false;
+                        printf("Player %c has win.\n", plyr->name);
+                        return;
+                    }
+                    break;  //if anything goes wrong above
+                }   
+            }
+        }
+        else
+        {
+            plyr->player_pos = position_before_move;
+            break;
+        }
+    }
+    capture_player(player_index);
+    plyr->mp_score += path_cost;
+    if(plyr->mp_score <= 0)
+    {
+        // plyr->player_pos = &cells[0][(rand() % 3) + 7][(rand() % 4) + 21];
+        // apply bhawana effects
+        player_to_bhawana(plyr);
+    }
+
+    partial_move:;
+    plyr->throw_count++;
+}
+
+void handle_player_state_movement(Player* plyr, int player_index)
 {
     plyr->move_value = movement_dice();
 
+    if(plyr->throw_count % 4 ==0)
+    {
+        plyr->direction = direction_dice(plyr);
+    }
+
     if(plyr->player_state == ACTIVE)
     {
-        if(plyr->throw_count % 4 ==0)
-        {
-            plyr->direction = direction_dice(plyr);
-        }
-
-        Cell* position_before_move = plyr->player_pos;
-
-        int path_cost = 0;
-        for(int step = 0; step < plyr->move_value; step++)
-        {
-            if(move_one_cell(plyr, plyr->direction) != NO_BOUNDS) break;    //terminates step
-
-            if(plyr->player_pos->is_valid)
-            {
-                for(int j = 0; j < sizeof(actions)/sizeof(actions[0]); j++)
-                {
-                    if(plyr->player_pos->celltypes & actions[j].flag)
-                    {
-                        HandlerResult step_result = actions[j].handler(plyr, &path_cost);
-                        if(step_result == CONTINUE_STEP)
-                        {
-                            break;
-                        }
-                        else if(step_result == ABORT_MOVE)
-                        {
-                            plyr->player_pos = position_before_move;
-                            goto partial_move;
-                        }
-                        else
-                        {
-                            game_on = false;
-                            printf("print output message for player win.\n");
-                            return;
-                        }
-                        break;  //if anything goes wrong above
-                    }   
-                }
-            }
-            else
-            {
-                plyr->player_pos = position_before_move;
-                break;
-            }
-        }
-        capture_player(player_index);
-        plyr->mp_score += path_cost;
-        printf("path cost is %d\n", path_cost);
-        printf("Player %c current mp is %d\n", plyr->name, plyr->mp_score);
-        partial_move:;
-        plyr->throw_count++;
-
+        handle_cell_traversal(plyr, plyr->direction, player_index);
+        printf("Player %c move in a path.\n", plyr->name);
     }
-    else
+    else if(plyr->player_state == INACTIVE)
     {
         if(plyr->move_value == 6)
         {
@@ -924,6 +980,26 @@ void moveplayer(Player* plyr, int player_index)
             plyr->player_state = ACTIVE;
             printf("Player %c is now active\n", plyr->name);
         }
+    } 
+    else if(plyr->player_state == FOOD_POISONED)
+    {
+        plyr->throw_count++;
+        if(plyr->effect_turns == 0)
+        {
+            plyr->player_pos = &cells[0][(rand() % 3) + 7][(rand() % 4) + 21];
+            return;
+        }
+        plyr->effect_turns--;
+    }
+    else if(plyr->player_state == DISORIENTED)
+    {
+        plyr->throw_count++;
+        if(plyr->effect_turns == 0)
+        {
+            plyr->player_state = ACTIVE;
+            return;
+        }
+        handle_cell_traversal(plyr, generate_player_direction(), player_index);
     }
 }
 
@@ -1040,6 +1116,7 @@ void create_randomised_array(int couples[12][2])
 
 void init_bhawana()
 {
+    add_cell_type(&cells[0][9][19], BHAWANA_ENTRANCE);
     //bhawana wall
     for(int length = 20; length < MAX_LENGTH; length++)
     {
@@ -1086,11 +1163,14 @@ int main()
     set_normal_cells();
 
     int player_index = 0;
-    int max_turns = 20;
-    while(game_on && (max_turns--)>0)
+    // int max_turns = 20;
+    //  && (max_turns--)>0
+    while(game_on)
     {
-        moveplayer(&players[player_index], player_index);
+        handle_player_state_movement(&players[player_index], player_index);
+        printf("this is the game round %d\n", game_round);
 
+        // get the player index for the next player 
         player_index = (player_index + 1) % NUM_OF_PLAYERS;
 
         if(player_index == 0) game_round++;
