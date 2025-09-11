@@ -576,25 +576,41 @@ void read_data()
 
 typedef enum
 {
-    PLAYER_AT_STARTING_AREA,
-    PLAYER_MOVE,
-    PLAYER_MOVE_WITH_DIRECTION,
-    PLAYER_BLOCKED_BY_WALL,
-    PLAYER_COMPLETE_MOVE,
-    PLAYER_TELEPORTED_TO_BHAWANA,
-    GET_FOOD_POISON,
-    MISS_TURN,
-    REVOVER_FROM_FOOD_POISON,
-    GET_DISORIENTED,
-    MOVING_DISORIENTED,
-    RECOVER_FROM_DISORIENTATION,
-    GET_TRIGGERED,
-    MOVING_TRIGGERED,
-    GET_HAPPY,
-    AT_BHAWANA_NORMAL_CELL,
-    PLAYER_TAKES_STAIR,
-    PLAYER_TAKES_POLE
-} MoveOutputSignal;
+    REMAIN_AT_SPAWN,
+    EXIT_STARTING_AREA,
+    MOVEMENT_BLOCKED,
+    COMPLETE_MOVE
+} MoveResult;
+
+char* get_player_dir_string(Player* plyr)
+{
+    switch (plyr->direction)
+    {
+    case NORTH: return "North";
+    case SOUTH: return "South";
+    case EAST: return "East";
+    case WEST: return "West";
+    }
+}
+
+void print_output(MoveResult result, Player* p, int path_cost)
+{
+    switch(result)
+    {
+        case REMAIN_AT_SPAWN:
+            printf("Player %c is at the starting area and rolls %d on the movement dice cannot enter the maze.\n", p->name, p->move_value);
+            return;
+        case EXIT_STARTING_AREA:
+            printf("Player %c is at the starting area and rolls 6 on the movement dice and is placed on [%d, %d, %d] of the maze.\n", p->name, p->first_cell->floor, p->first_cell->width, p->first_cell->length);
+            return;
+        case MOVEMENT_BLOCKED:
+            printf("Player %c rolls and %d on the movement dice and cannot move in the %s. Player remains at [%d, %d, %d]\n", p->name, p->move_value, get_player_dir_string(p), p->player_pos->floor, p->player_pos->width, p->player_pos->length);
+            return;
+        case COMPLETE_MOVE:
+            printf("Player %c moved %d that cost %d movement points and is left with %d and is moving in the %s.\n", p->name, p->move_value, path_cost, p->mp_score, get_player_dir_string(p));
+            return;
+    }
+}
 
 // typedef enum
 // {
@@ -664,7 +680,7 @@ Bounds move_one_cell(Player* plyr, PlayerDirection dir)
     {
         return NORTH_BOUND;     // [LATER] add custom output
     }
-    else if(width == MAX_WIDTH)
+    else if(width >= MAX_WIDTH)
     {
         return SOUTH_BOUND;
     }
@@ -672,7 +688,7 @@ Bounds move_one_cell(Player* plyr, PlayerDirection dir)
     {
         return EAST_BOUND;
     }
-    else if(length == MAX_LENGTH)
+    else if(length >= MAX_LENGTH)
     {
         return WEST_BOUND;
     }
@@ -820,7 +836,7 @@ HandlerResult handle_flag(Player* plyr, int* ignore_val)
 
 HandlerResult handle_bhawana(Player* plyr, int* ignore_val)
 {
-    
+    return ABORT_MOVE;
 }
 
 typedef struct
@@ -911,7 +927,12 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
     int path_cost = 0;
     for(int step = 0; step < plyr->move_value; step++)
     {
-        if(move_one_cell(plyr, move_direction) != NO_BOUNDS) break;    //terminates step
+        if(move_one_cell(plyr, move_direction) != NO_BOUNDS)
+        {
+            plyr->player_pos = position_before_move;
+            print_output(MOVEMENT_BLOCKED, plyr, 0);
+            goto partial_move;    //terminates step
+        }
 
         if(plyr->player_pos->is_valid)
         {
@@ -927,6 +948,7 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
                     else if(step_result == ABORT_MOVE)
                     {
                         plyr->player_pos = position_before_move;
+                        print_output(MOVEMENT_BLOCKED, plyr, 0);
                         goto partial_move;
                     }
                     else    //game won
@@ -935,7 +957,6 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
                         printf("Player %c has win.\n", plyr->name);
                         return;
                     }
-                    break;  //if anything goes wrong above
                 }   
             }
         }
@@ -947,13 +968,14 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
     }
     capture_player(player_index);
     plyr->mp_score += path_cost;
+    print_output(COMPLETE_MOVE, plyr, path_cost);
     if(plyr->mp_score <= 0)
     {
         // plyr->player_pos = &cells[0][(rand() % 3) + 7][(rand() % 4) + 21];
         // apply bhawana effects
         player_to_bhawana(plyr);
     }
-
+    
     partial_move:;
     plyr->throw_count++;
 }
@@ -970,36 +992,54 @@ void handle_player_state_movement(Player* plyr, int player_index)
     if(plyr->player_state == ACTIVE)
     {
         handle_cell_traversal(plyr, plyr->direction, player_index);
-        printf("Player %c move in a path.\n", plyr->name);
     }
-    else if(plyr->player_state == INACTIVE)
+    else
     {
-        if(plyr->move_value == 6)
+        if(plyr->player_state == INACTIVE)
         {
-            plyr->player_pos = plyr->first_cell;
-            plyr->player_state = ACTIVE;
-            printf("Player %c is now active\n", plyr->name);
+            if(plyr->move_value == 6)
+            {
+                plyr->player_pos = plyr->first_cell;
+                plyr->player_state = ACTIVE;
+                print_output(EXIT_STARTING_AREA, plyr, 0);
+            }
+            else
+            {
+                print_output(REMAIN_AT_SPAWN, plyr, 0);
+            }
+        } 
+        else
+        { 
+            if(plyr->player_state == FOOD_POISONED)
+            {
+                printf("The Player %c is food poisoned.\n", plyr->name);
+                plyr->throw_count++;
+                if(plyr->effect_turns == 0)
+                {
+                    plyr->player_pos = &cells[0][(rand() % 3) + 7][(rand() % 4) + 21];
+                    return;
+                }
+                plyr->effect_turns--;
+            }
+            else
+            {
+                if(plyr->player_state == DISORIENTED)
+                {
+                    printf("The Player %c is disoriented.\n", plyr->name);
+                    plyr->throw_count++;
+                    if(plyr->effect_turns == 0)
+                    {
+                        plyr->player_state = ACTIVE;
+                        return;
+                    }
+                    handle_cell_traversal(plyr, generate_player_direction(), player_index);
+                }
+                else
+                {
+                    printf("The Player %c didn't matched any states.\n", plyr->name);
+                }
+            }
         }
-    } 
-    else if(plyr->player_state == FOOD_POISONED)
-    {
-        plyr->throw_count++;
-        if(plyr->effect_turns == 0)
-        {
-            plyr->player_pos = &cells[0][(rand() % 3) + 7][(rand() % 4) + 21];
-            return;
-        }
-        plyr->effect_turns--;
-    }
-    else if(plyr->player_state == DISORIENTED)
-    {
-        plyr->throw_count++;
-        if(plyr->effect_turns == 0)
-        {
-            plyr->player_state = ACTIVE;
-            return;
-        }
-        handle_cell_traversal(plyr, generate_player_direction(), player_index);
     }
 }
 
@@ -1167,14 +1207,18 @@ int main()
     //  && (max_turns--)>0
     while(game_on)
     {
+        if(player_index == 0)
+        {
+            game_round++;
+            printf("GAME ROUND: %d\n", game_round);
+        }
+        if(game_round % GAME_SETTING == 0) change_stair_direction();
+
         handle_player_state_movement(&players[player_index], player_index);
-        printf("this is the game round %d\n", game_round);
 
         // get the player index for the next player 
         player_index = (player_index + 1) % NUM_OF_PLAYERS;
 
-        if(player_index == 0) game_round++;
-        if(game_round % GAME_SETTING == 0) change_stair_direction();
     }
 
     for(int i = 0; i < stair_count; i++) free(stairs_array[i]);
