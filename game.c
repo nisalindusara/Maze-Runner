@@ -81,7 +81,7 @@ void print_file_error(FileErrors error, char filename[], FILE *logfile)
     switch(error)
     {
         case FILE_NOT_OPEN:
-            fprintf(logfile, "[ERROR] Cannot open (file: %s)\n", filename);
+            fprintf(logfile, "[ERROR] Cannot open (file: %s) %s\n", filename);
             break;
         case EMPTY_FILE:
             fprintf(logfile, "[ERROR] File is empty (file: %s). No data to process.\n", filename);
@@ -190,12 +190,12 @@ void load_poles(int* digits, char filename[], FILE* logfile, int num_lines)
 
     if( exit_floor!=1 && exit_floor!=0 ) 
     {
-        print_range_error(START_FLOOR, filename, logfile, num_lines); 
+        print_range_error(END_FLOOR, filename, logfile, num_lines); 
         return;
     }
     if( enter_floor!=1 && enter_floor!=2 ) 
     {
-        print_range_error(END_FLOOR, filename, logfile, num_lines); 
+        print_range_error(START_FLOOR, filename, logfile, num_lines); 
         return;
     }
     if( width_num<0 || width_num>=MAX_WIDTH ) 
@@ -315,13 +315,16 @@ void load_stairs(int* digits, char filename[], FILE* logfile, int num_lines)
 
         add_cell_type(stair_start_cell, CELL_STAIR_START);
         add_cell_type(stair_end_cell, CELL_STAIR_END);
+
+        if(stair_start_cell->floor == 0 && stair_end_cell->floor == 2)
+        {
+            //make the middle floor cell valid [CHECK] whether the intercepting cell should be a valid or not
+        }
     }
     else
     {
         return;
     }
-
-    
 }
 
 int check_wall_init_conditions(Cell* cell)
@@ -518,7 +521,11 @@ int parse_and_process_line(const char* line, char filename[], FILE* logfile, int
 
 int validate_file(char filename[])
 {
-    FILE* logf = fopen("log.txt", "a");
+    FILE* logf = fopen("log.txt", "w");
+    if(logf == NULL) perror("log.txt crashed!");
+    fclose(logf);
+
+    logf = fopen("log.txt", "a");
     if(logf == NULL) perror("log.txt crashed!");
     
     FILE* dataf = fopen(filename, "r");
@@ -679,24 +686,28 @@ typedef enum {
     WIN_GAME
 } HandlerResult;
 
-typedef HandlerResult (*CellHandler)(Player* );
+typedef HandlerResult (*CellHandler)(Player*, int*);
 
-// HandlerResult handle_normal_consumable(Player* plyr)
-// {
-//     plyr->mp_score = plyr->mp_score - plyr->player_pos->data.mpdata.value;
-//     return CONTINUE_STEP;
-// }
+HandlerResult handle_normal_consumable(Player* plyr, int* cost)
+{
+    *cost -= plyr->player_pos->data.mpdata.value;
+    return CONTINUE_STEP;
+}
 
-// HandlerResult handle_normal_bonus(Player* plyr)
-// {
-//     if(plyr->player_pos->data.mpdata.factor == '+')
-//     {
-//         plyr->mp_score += plyr
-//     }
-//     return CONTINUE_STEP;
-// }
+HandlerResult handle_normal_bonus(Player* plyr, int* cost)
+{
+    if(plyr->player_pos->data.mpdata.factor == '+')
+    {
+        *cost += plyr->player_pos->data.mpdata.value;
+    }
+    else
+    {
+        *cost *= plyr->player_pos->data.mpdata.value;
+    }
+    return CONTINUE_STEP;
+}
 
-HandlerResult handle_wall(Player* plyr)
+HandlerResult handle_wall(Player* plyr, int* ignore_val)
 {
     return ABORT_MOVE;
 }
@@ -745,7 +756,7 @@ HandlerResult handle_stair(Player* plyr, StairDirection wrong_dir, Cell* stair0_
         {
             if((cell->data.stairs[0]->direction != wrong_dir) && (cell->data.stairs[1]->direction != wrong_dir))
             {
-                pick_stair_heuristic(stair0_dest_cell, stair1_dest_cell, cell_flag);
+                plyr->player_pos = pick_stair_heuristic(stair0_dest_cell, stair1_dest_cell, cell_flag);
                 return CONTINUE_STEP;
             }
             else if(cell->data.stairs[0]->direction != wrong_dir)
@@ -762,10 +773,10 @@ HandlerResult handle_stair(Player* plyr, StairDirection wrong_dir, Cell* stair0_
         }
         else if((cell->data.stairs[0]->start_cell == cell)&&(cell->data.stairs[0]->direction != wrong_dir))
         {
-            plyr->player_pos = stair1_dest_cell;
+            plyr->player_pos = stair0_dest_cell;
             return CONTINUE_STEP;
         }
-        else if((cell->data.stairs[0]->start_cell == cell)&&(cell->data.stairs[0]->direction != wrong_dir))
+        else if((cell->data.stairs[1]->start_cell == cell)&&(cell->data.stairs[1]->direction != wrong_dir))
         {
             plyr->player_pos = stair1_dest_cell;
             return CONTINUE_STEP;
@@ -774,43 +785,45 @@ HandlerResult handle_stair(Player* plyr, StairDirection wrong_dir, Cell* stair0_
     }
 }
 
-HandlerResult handle_stair_start(Player* plyr)
+HandlerResult handle_stair_start(Player* plyr, int* ignore_val)
 {
     return handle_stair(plyr, DOWN, plyr->player_pos->data.stairs[0]->end_cell, plyr->player_pos->data.stairs[1]->end_cell);
 }
 
-HandlerResult handle_stair_end(Player* plyr)
+HandlerResult handle_stair_end(Player* plyr, int* ignore_val)
 {
     return handle_stair(plyr, UP, plyr->player_pos->data.stairs[0]->start_cell, plyr->player_pos->data.stairs[1]->start_cell);
 }
 
-HandlerResult handle_pole_enter(Player* plyr)
+HandlerResult handle_pole_enter(Player* plyr, int* ignore_val)
 {
     plyr->player_pos = plyr->player_pos->data.pole_data.dest_cell;
     return CONTINUE_STEP;
 }
 
-HandlerResult handle_no_special_effect_cell(Player* plyr)
+HandlerResult handle_no_special_effect_cell(Player* plyr, int* ignore_val)
 {
     return CONTINUE_STEP;
 }
 
-HandlerResult handle_starting_area(Player* plyr)
+HandlerResult handle_starting_area(Player* plyr, int* ignore_val)
 {
     //can be called because a player went staright to the starting area or went through a pole or a stair. need to handle both
     return ABORT_MOVE;
 }
 
-HandlerResult handle_flag(Player* plyr)
+HandlerResult handle_flag(Player* plyr, int* ignore_val)
 {
     return WIN_GAME;
 }
 
-HandlerResult handle_bhawana(Player* plyr)
+HandlerResult handle_bhawana(Player* plyr, int* ignore_val)
 {
     //[LATER]
     return CONTINUE_STEP;
 }
+
+
 
 typedef struct
 {
@@ -820,8 +833,8 @@ typedef struct
 
 static const CellAction actions[] = {                           //order matters [CHECK]
     { CELL_FLAG,                handle_flag             },
-    // { CELL_NORMAL_CONSUMABLE,   handle_normal_consumable},
-    // { CELL_NORMAL_BONUS,        handle_normal_bonus     },
+    { CELL_NORMAL_CONSUMABLE,   handle_normal_consumable},
+    { CELL_NORMAL_BONUS,        handle_normal_bonus     },
     { CELL_POLE_ENTER,          handle_pole_enter       },
     { CELL_STAIR_START,         handle_stair_start      },
     { CELL_STAIR_END,           handle_stair_end        },
@@ -858,6 +871,7 @@ void moveplayer(Player* plyr, int player_index)
 
         Cell* position_before_move = plyr->player_pos;
 
+        int path_cost = 0;
         for(int step = 0; step < plyr->move_value; step++)
         {
             if(move_one_cell(plyr, plyr->direction) != NO_BOUNDS) break;    //terminates step
@@ -868,7 +882,7 @@ void moveplayer(Player* plyr, int player_index)
                 {
                     if(plyr->player_pos->celltypes & actions[j].flag)
                     {
-                        HandlerResult step_result = actions[j].handler(plyr);
+                        HandlerResult step_result = actions[j].handler(plyr, &path_cost);
                         if(step_result == CONTINUE_STEP)
                         {
                             break;
@@ -895,6 +909,9 @@ void moveplayer(Player* plyr, int player_index)
             }
         }
         capture_player(player_index);
+        plyr->mp_score += path_cost;
+        printf("path cost is %d\n", path_cost);
+        printf("Player %c current mp is %d\n", plyr->name, plyr->mp_score);
         partial_move:;
         plyr->throw_count++;
 
@@ -905,6 +922,7 @@ void moveplayer(Player* plyr, int player_index)
         {
             plyr->player_pos = plyr->first_cell;
             plyr->player_state = ACTIVE;
+            printf("Player %c is now active\n", plyr->name);
         }
     }
 }
@@ -1035,7 +1053,23 @@ void init_bhawana()
     int couples[12][2];  // 12 couples
     create_randomised_array(couples);
 
-
+    //first 4 cells is set to normal bonus
+    for(int i = 0; i < 4; i++)
+    {
+        add_cell_type(&cells[0][couples[i][0]][couples[i][1]], BHAWANA_BONUS);
+    }
+    //next 2 cells will set to food poison
+    add_cell_type(&cells[0][couples[4][0]][couples[4][1]], BHAWANA_FOOD_POISONING);
+    add_cell_type(&cells[0][couples[5][0]][couples[5][1]], BHAWANA_FOOD_POISONING);
+    //next 2 cells will set to disoriented
+    add_cell_type(&cells[0][couples[6][0]][couples[6][1]], BHAWANA_DISORIENT);
+    add_cell_type(&cells[0][couples[7][0]][couples[7][1]], BHAWANA_DISORIENT);
+    //next 2 cells will set to triggered
+    add_cell_type(&cells[0][couples[8][0]][couples[8][1]], BHAWANA_TRIGGER);
+    add_cell_type(&cells[0][couples[9][0]][couples[9][1]], BHAWANA_TRIGGER);
+    //next 2 cells will set to happy
+    add_cell_type(&cells[0][couples[10][0]][couples[10][1]], BHAWANA_HAPPY);
+    add_cell_type(&cells[0][couples[11][0]][couples[11][1]], BHAWANA_HAPPY);
 }
 
 //for compilation purpose only
@@ -1049,9 +1083,10 @@ int main()
     
     init_bhawana();
     read_data();
+    set_normal_cells();
 
     int player_index = 0;
-    int max_turns = 12;
+    int max_turns = 20;
     while(game_on && (max_turns--)>0)
     {
         moveplayer(&players[player_index], player_index);
