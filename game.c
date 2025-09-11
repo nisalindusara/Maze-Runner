@@ -35,6 +35,7 @@ void init_cells()
                 cells[floor][width][length].width = width;
                 cells[floor][width][length].length = length;
                 cells[floor][width][length].is_valid = true;
+                cells[floor][width][length].celltypes = CELL_NONE;
                 cells[floor][width][length].data.access_pole = false;
                 cells[floor][width][length].data.stair_count = 0;
                 cells[floor][width][length].data.has_movementpoint = false;
@@ -565,7 +566,34 @@ void read_data()
     }
 }
 
+typedef enum
+{
+    PLAYER_AT_STARTING_AREA,
+    PLAYER_MOVE,
+    PLAYER_MOVE_WITH_DIRECTION,
+    PLAYER_BLOCKED_BY_WALL,
+    PLAYER_COMPLETE_MOVE,
+    PLAYER_TELEPORTED_TO_BHAWANA,
+    GET_FOOD_POISON,
+    MISS_TURN,
+    REVOVER_FROM_FOOD_POISON,
+    GET_DISORIENTED,
+    MOVING_DISORIENTED,
+    RECOVER_FROM_DISORIENTATION,
+    GET_TRIGGERED,
+    MOVING_TRIGGERED,
+    GET_HAPPY,
+    AT_BHAWANA_NORMAL_CELL,
+    PLAYER_TAKES_STAIR,
+    PLAYER_TAKES_POLE
+} MoveOutputSignal;
 
+// typedef enum
+// {
+
+// } BhawanaOutputSignal;
+
+void print_output();
 
 /*
     initiate the move function
@@ -653,15 +681,20 @@ typedef enum {
 
 typedef HandlerResult (*CellHandler)(Player* );
 
-HandlerResult handle_normal_consumable(Player* plyr)
-{
-    return CONTINUE_STEP;
-}
+// HandlerResult handle_normal_consumable(Player* plyr)
+// {
+//     plyr->mp_score = plyr->mp_score - plyr->player_pos->data.mpdata.value;
+//     return CONTINUE_STEP;
+// }
 
-HandlerResult handle_normal_bonus(Player* plyr)
-{
-    return CONTINUE_STEP;
-}
+// HandlerResult handle_normal_bonus(Player* plyr)
+// {
+//     if(plyr->player_pos->data.mpdata.factor == '+')
+//     {
+//         plyr->mp_score += plyr
+//     }
+//     return CONTINUE_STEP;
+// }
 
 HandlerResult handle_wall(Player* plyr)
 {
@@ -757,7 +790,7 @@ HandlerResult handle_pole_enter(Player* plyr)
     return CONTINUE_STEP;
 }
 
-HandlerResult handle_pole_exit(Player* plyr)
+HandlerResult handle_no_special_effect_cell(Player* plyr)
 {
     return CONTINUE_STEP;
 }
@@ -787,15 +820,16 @@ typedef struct
 
 static const CellAction actions[] = {                           //order matters [CHECK]
     { CELL_FLAG,                handle_flag             },
-    { CELL_NORMAL_CONSUMABLE,   handle_normal_consumable},
-    { CELL_NORMAL_BONUS,        handle_normal_bonus     },
+    // { CELL_NORMAL_CONSUMABLE,   handle_normal_consumable},
+    // { CELL_NORMAL_BONUS,        handle_normal_bonus     },
     { CELL_POLE_ENTER,          handle_pole_enter       },
     { CELL_STAIR_START,         handle_stair_start      },
     { CELL_STAIR_END,           handle_stair_end        },
     { CELL_WALL,                handle_wall             },
-    { CELL_POLE_EXIT,           handle_pole_exit        },
-    { CELL_STARTING_AREA,       handle_starting_area    },
-    { CELL_BHAWANA,             handle_bhawana          },
+    { CELL_POLE_EXIT,           handle_no_special_effect_cell   },
+    { CELL_STARTING_AREA,       handle_starting_area            },
+    { CELL_BHAWANA,             handle_bhawana                  },
+    { CELL_NONE,                handle_no_special_effect_cell   },
 };
 
 void capture_player(int current_player_index)
@@ -893,14 +927,127 @@ void change_stair_direction()
     }
 }
 
+int weighted_random_number(const double* probs)
+{
+    double randnum = (double)rand() / RAND_MAX;
+    double cumulative = 0.0;
+
+    for(int i = 0; i < 5; i++)
+    {
+        cumulative += probs[i];
+        if(randnum < cumulative)
+        {
+            return i;
+        }
+    }
+    //fallback in case of rounding errors
+    return 0;
+}
+
+void set_normal_cells()
+{
+    //Define probabilities for 0 to 4
+    double probabilities[5] = {0.35, 0.25, 0.25, 0.1, 0.05};
+
+    for(int floor = 0; floor < NUM_OF_FLOORS; floor++)
+    {
+        for(int width = 0; width < MAX_WIDTH; width++)
+        {
+            for(int length = 0; length < MAX_LENGTH; length++)
+            {
+                if(cells[floor][width][length].celltypes == CELL_NONE)
+                {
+                    Cell* cell = &cells[floor][width][length];
+                    switch(weighted_random_number(probabilities))
+                    {
+                        case 0:
+                            cell->data.has_movementpoint = true;
+                            cell->data.mpdata.factor = '-';
+                            cell->data.mpdata.value = (rand() % 4) + 1;
+                            add_cell_type(cell, CELL_NORMAL_CONSUMABLE);
+                            break;
+                        case 2:
+                            cell->data.has_movementpoint = true;
+                            cell->data.mpdata.factor = '+';
+                            cell->data.mpdata.value = (rand() % 2) + 1;
+                            add_cell_type(cell, CELL_NORMAL_BONUS);
+                            break;
+                        case 3:
+                            cell->data.has_movementpoint = true;
+                            cell->data.mpdata.factor = '+';
+                            cell->data.mpdata.value = (rand() % 3) + 3;
+                            add_cell_type(cell, CELL_NORMAL_BONUS);
+                            break;
+                        case 4:
+                            cell->data.has_movementpoint = true;
+                            cell->data.mpdata.factor = '*';
+                            cell->data.mpdata.value = (rand() % 2) + 2;
+                            add_cell_type(cell, CELL_NORMAL_BONUS);
+                            break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void create_randomised_array(int couples[12][2])
+{
+    int set1[] = {7, 8, 9};
+    int set2[] = {21, 22, 23, 24};
+
+    int k = 0;
+
+    // Generate all 12 distinct couples
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 4; j++) {
+            couples[k][0] = set1[i];
+            couples[k][1] = set2[j];
+            k++;
+        }
+    }
+
+    // Shuffle using Fisher-Yates
+    for (int i = 11; i > 0; i--) {
+        int j = rand() % (i + 1);
+        // swap couples[i] with couples[j]
+        int temp0 = couples[i][0];
+        int temp1 = couples[i][1];
+        couples[i][0] = couples[j][0];
+        couples[i][1] = couples[j][1];
+        couples[j][0] = temp0;
+        couples[j][1] = temp1;
+    }
+}
+
+void init_bhawana()
+{
+    //bhawana wall
+    for(int length = 20; length < MAX_LENGTH; length++)
+    {
+        add_cell_type(&cells[0][6][length], CELL_WALL);
+    }
+    for(int width = 7; width < MAX_WIDTH; width++)
+    {
+        add_cell_type(&cells[0][width][20], CELL_WALL);
+    }
+    //bhawana cells
+    int couples[12][2];  // 12 couples
+    create_randomised_array(couples);
+
+
+}
+
 //for compilation purpose only
 int main()
 {
+    srand(time(NULL));
     init_cells();
     init_players();
 
     stairs_array = malloc(stair_array_capacity * sizeof(Stair*));
-
+    
+    init_bhawana();
     read_data();
 
     int player_index = 0;

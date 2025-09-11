@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <time.h>
 
 //MACROS
 #define NUM_OF_PLAYERS 3
