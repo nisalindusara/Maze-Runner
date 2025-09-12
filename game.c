@@ -16,6 +16,10 @@ Cell* bhawana_entrance_cell_ptr;
 int game_round = 0;
 bool game_on = true;
 
+#define MAX_EVENTS_PER_EACH_MOVE 6
+MoveEvent event_list[MAX_EVENTS_PER_EACH_MOVE];
+int front = -1, rear = -1;
+
 void mark_cells(int floor, int start_w, int end_w, int start_l, int end_l, bool is_valid, CellType type) {
     for(int w = start_w; w <= end_w; w++)
         for(int l = start_l; l <= end_l; l++) {
@@ -574,14 +578,6 @@ void read_data()
     }
 }
 
-typedef enum
-{
-    REMAIN_AT_SPAWN,
-    EXIT_STARTING_AREA,
-    MOVEMENT_BLOCKED,
-    COMPLETE_MOVE
-} MoveResult;
-
 char* get_player_dir_string(Player* plyr)
 {
     switch (plyr->direction)
@@ -609,6 +605,15 @@ void print_output(MoveResult result, Player* p, int path_cost)
         case COMPLETE_MOVE:
             printf("Player %c moved %d that cost %d movement points and is left with %d and is moving in the %s.\n", p->name, p->move_value, path_cost, p->mp_score, get_player_dir_string(p));
             return;
+        case START_MOVE:
+            printf("Player %c rolls and %d on the movement dice and moves %s by %d cells and is now at [%d, %d, %d].\n", p->name, p->move_value, get_player_dir_string(p), p->move_value, p->player_pos->floor, p->player_pos->width, p->player_pos->length);
+            return;
+        case START_MOVE_WITH_DIRECTION:
+            printf("Player %c rolls and %d on the movement dice and %s on the direction dice, changes direction to %s and moves %d cells and is now at [%d, %d, %d].\n", p->name, p->move_value, get_player_dir_string(p), get_player_dir_string(p), p->move_value, p->player_pos->floor, p->player_pos->width, p->player_pos->length);
+            return;
+        default:
+            printf("Game error while trying to print move output. Contact developers!\n");
+            exit(1);
     }
 }
 
@@ -920,10 +925,55 @@ PlayerDirection generate_player_direction()
     }
 }
 
+
+bool event_list_full()
+{
+    return ((rear + 1) % MAX_EVENTS_PER_EACH_MOVE) == front;
+}
+
+bool event_list_empty()
+{
+    return front == -1;
+}
+
+void add_event(MoveResult event_type)
+{
+    if(event_list_full())
+    {
+        printf("[EventListFullError] Please contact developer!\n");
+        exit(1);
+    }
+    rear = (rear + 1) % MAX_EVENTS_PER_EACH_MOVE;
+    if(event_list_empty()) front = 0;
+    event_list[rear].event = event_type; 
+}
+
+void print_event_list(Player* plyr, int path_cost)
+{
+    if(event_list_empty())
+    {
+       return;  //no events to print 
+    }
+
+
+    printf("front is %d and rear is %d\n", front, rear);
+    int i = front;
+    while (true) 
+    {
+        print_output(event_list[i].event, plyr, path_cost);
+        if (i == rear) break;
+        i = (i + 1) % MAX_EVENTS_PER_EACH_MOVE;
+    }
+}
+
+void reset_event_list()
+{
+    front = rear = -1;
+}
+
 void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int player_index)
 {
     Cell* position_before_move = plyr->player_pos;
-
     int path_cost = 0;
     for(int step = 0; step < plyr->move_value; step++)
     {
@@ -968,7 +1018,8 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
     }
     capture_player(player_index);
     plyr->mp_score += path_cost;
-    print_output(COMPLETE_MOVE, plyr, path_cost);
+    add_event(COMPLETE_MOVE);
+    print_event_list(plyr, path_cost);
     if(plyr->mp_score <= 0)
     {
         // plyr->player_pos = &cells[0][(rand() % 3) + 7][(rand() % 4) + 21];
@@ -983,11 +1034,12 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
 void handle_player_state_movement(Player* plyr, int player_index)
 {
     plyr->move_value = movement_dice();
-
     if(plyr->throw_count % 4 ==0)
     {
         plyr->direction = direction_dice(plyr);
+        add_event(START_MOVE_WITH_DIRECTION);
     }
+    else add_event(START_MOVE);
 
     if(plyr->player_state == ACTIVE)
     {
@@ -1041,6 +1093,7 @@ void handle_player_state_movement(Player* plyr, int player_index)
             }
         }
     }
+    reset_event_list();
 }
 
 StairDirection get_random_stair_direction()

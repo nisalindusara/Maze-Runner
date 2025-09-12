@@ -148,4 +148,28 @@ extern int game_round;
 extern Player players[NUM_OF_PLAYERS];
 extern Cell cells[NUM_OF_FLOORS][MAX_WIDTH][MAX_LENGTH];
 
+/*  Event Handling  */
+
+typedef union 
+{
+    Stair* stair_data;
+    bool no_data;
+}EventData;
+
+typedef enum
+{
+    REMAIN_AT_SPAWN,
+    EXIT_STARTING_AREA,
+    MOVEMENT_BLOCKED,
+    COMPLETE_MOVE,
+    START_MOVE,
+    START_MOVE_WITH_DIRECTION
+} MoveResult;
+
+typedef struct
+{
+    MoveResult event;
+    EventData data;
+} MoveEvent;
+
 #endif
