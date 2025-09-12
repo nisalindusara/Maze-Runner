@@ -1,5 +1,7 @@
 #include "game.h"
 
+/*  ---------------------------------------------global variable declaration---------------------------------------------*/
+
 #define GAME_SETTING 5
 #define MAX_LINE_LEN 256
 
@@ -24,7 +26,15 @@ char* time_buffer;
 
 FILE* log_fp;
 
-void mark_cells(int floor, int start_w, int end_w, int start_l, int end_l, bool is_valid, CellType type) {
+/* ================== GAME INIT FUNCTIONS ================== */
+
+/*
+    Initializes all players (with starting positions, directions, and sets 
+    their initial game state), all valid and invalid cells and Bhawana area.
+*/
+
+void mark_cells(int floor, int start_w, int end_w, int start_l, int end_l, bool is_valid, CellType type) 
+{
     for(int w = start_w; w <= end_w; w++)
         for(int l = start_l; l <= end_l; l++) {
             cells[floor][w][l].is_valid = is_valid;
@@ -60,6 +70,10 @@ void init_cells()
 void init_players()
 {
     char name_array[NUM_OF_PLAYERS] = {'A', 'B', 'C'};
+    PlayerDirection dir_array[NUM_OF_PLAYERS] = {NORTH, WEST, EAST};
+    int starting_cells[NUM_OF_PLAYERS][3] = {{0,6,12},{0,9,8},{0,9,16}};
+    int first_cells[NUM_OF_PLAYERS][3] = {{0,5,12},{0,9,7},{0,9,17}};
+
     for(int i = 0; i < NUM_OF_PLAYERS; i++)
     {
         players[i].name = name_array[i];
@@ -67,18 +81,12 @@ void init_players()
         players[i].throw_count = 0;
         players[i].move_value = 0;
         players[i].mp_score = 100;
+        players[i].direction = dir_array[i];
+        players[i].starting_cell = &cells[starting_cells[i][0]][ starting_cells[i][1] ][ starting_cells[i][2] ];
+        players[i].first_cell = &cells[first_cells[i][0]][ first_cells[i][1] ][ first_cells[i][2] ];
+        // initial position
+        players[i].player_pos = players[i].starting_cell;
     }
-    players[0].direction = EAST;
-    players[1].direction = WEST;
-    players[2].direction = EAST;
-
-    players[0].starting_cell = players[0].player_pos = &cells[2][9][16];
-    players[1].starting_cell = players[1].player_pos = &cells[0][9][8];
-    players[2].starting_cell = players[2].player_pos = &cells[0][9][16];
-
-    players[0].first_cell = players[0].player_pos = &cells[2][9][15];
-    players[1].first_cell = players[1].player_pos = &cells[0][9][7];
-    players[2].first_cell = players[2].player_pos = &cells[0][9][17];
 }
 
 /*
@@ -172,8 +180,9 @@ void print_range_error(RangeError error, char filename[], int line_number)
 
 bool check_cell_types(Cell *c, int types) 
 {
-    return (c->celltypes & types) != 0;
+    return (c->celltypes & types) != 0;     //true if have
 }
+
 void add_cell_type(Cell *c, int type)
 {
     c->celltypes |= type;
@@ -200,13 +209,12 @@ void load_flag(int* digits, char filename[], int num_lines)
         return;
     }
     //Init flag
-    if(cells[floor][width_num][length_num].is_valid && !check_cell_types(&cells[floor][width_num][length_num], CELL_STARTING_AREA) )
+    if(cells[floor][width_num][length_num].is_valid && !check_cell_types(&cells[floor][width_num][length_num], CELL_STARTING_AREA | CELL_BHAWANA) )
     {
-        cells[floor][width_num][length_num].celltypes = CELL_FLAG;
         cell_flag = &cells[floor][width_num][length_num];
+        add_cell_type(cell_flag, CELL_FLAG);
     }
 }
-
 
 void load_poles(int* digits, char filename[], int num_lines)
 {
@@ -618,7 +626,7 @@ void print_output(MoveResult result, Player* p, int path_cost, Cell* trigger_cel
             printf("Player %c rolls and %d on the movement dice and cannot move in the %s. Player remains at [%d, %d, %d]\n", p->name, p->move_value, get_player_dir_string(p), p->player_pos->floor, p->player_pos->width, p->player_pos->length);
             return;
         case COMPLETE_MOVE:
-            printf("Player %c moved %d that cost %d movement points and is left with %d and is moving in the %s.\n", p->name, p->move_value, path_cost, p->mp_score, get_player_dir_string(p));
+            printf("Player %c moved %d that cost %+d movement points and is left with %d and is moving in the %s.\n", p->name, p->move_value, path_cost, p->mp_score, get_player_dir_string(p));
             return;
         case START_MOVE:
             printf("Player %c rolls and %d on the movement dice and moves %s by %d cells and is now at [%d, %d, %d].\n", p->name, p->move_value, get_player_dir_string(p), p->move_value, p->player_pos->floor, p->player_pos->width, p->player_pos->length);
@@ -747,10 +755,10 @@ Bounds move_one_cell(Player* plyr, PlayerDirection dir)
             width++; //move down
             break;
         case EAST:
-            length--; //move left
+            length++; //move left
             break;
         case WEST:
-            length++; //move right
+            length--; //move right
             break;
     }
 
@@ -929,7 +937,7 @@ HandlerResult handle_stair(Player* plyr, StairDirection wrong_dir, Cell* stair0_
             }
             else if(cell->data.stairs[1]->direction != wrong_dir)
             {
-                add_event(TAKE_STAIR, plyr->player_pos, stair0_dest_cell);
+                add_event(TAKE_STAIR, plyr->player_pos, stair1_dest_cell);
                 plyr->player_pos = stair1_dest_cell;
                 return check_landed_cell(plyr);
             }
@@ -953,12 +961,46 @@ HandlerResult handle_stair(Player* plyr, StairDirection wrong_dir, Cell* stair0_
 
 HandlerResult handle_stair_start(Player* plyr, int* ignore_val)
 {
-    return handle_stair(plyr, DOWN, plyr->player_pos->data.stairs[0]->end_cell, plyr->player_pos->data.stairs[1]->end_cell);
+    // Only one stair
+    if (plyr->player_pos->data.stair_count == 1 || plyr->player_pos->data.stairs[1] == NULL) 
+    {
+        return handle_stair( 
+            plyr,
+            DOWN,
+            plyr->player_pos->data.stairs[0]->end_cell,
+            NULL   // second stair doesn’t exist
+        );
+    }
+
+    // Two stairs
+    return handle_stair(
+        plyr,
+        DOWN,
+        plyr->player_pos->data.stairs[0]->end_cell,
+        plyr->player_pos->data.stairs[1]->end_cell
+    );
 }
+
 
 HandlerResult handle_stair_end(Player* plyr, int* ignore_val)
 {
-    return handle_stair(plyr, UP, plyr->player_pos->data.stairs[0]->start_cell, plyr->player_pos->data.stairs[1]->start_cell);
+    if (plyr->player_pos->data.stair_count == 1 || plyr->player_pos->data.stairs[1] == NULL) 
+    {
+        return handle_stair( 
+            plyr,
+            UP,
+            plyr->player_pos->data.stairs[0]->end_cell,
+            NULL   // second stair doesn’t exist
+        );
+    }
+
+    // Two stairs
+    return handle_stair(
+        plyr,
+        UP,
+        plyr->player_pos->data.stairs[0]->end_cell,
+        plyr->player_pos->data.stairs[1]->end_cell
+    );
 }
 
 HandlerResult handle_pole_enter(Player* plyr, int* ignore_val)
@@ -1046,6 +1088,9 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
         {
             plyr->player_pos = position_before_move;
             print_output(MOVEMENT_BLOCKED, plyr, 0, NULL, NULL);
+            plyr->mp_score -= 2;
+            plyr->move_value = 0;
+            print_output(COMPLETE_MOVE, plyr, -2, NULL, NULL);
             goto partial_move;    //terminates step
         }
 
@@ -1065,6 +1110,8 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
                         plyr->player_pos = position_before_move;
                         print_output(MOVEMENT_BLOCKED, plyr, 0, NULL, NULL);
                         plyr->mp_score -= 2;
+                        plyr->move_value = 0;
+                        print_output(COMPLETE_MOVE, plyr, -2, NULL, NULL);
                         goto partial_move;
                     }
                     else    //game won
@@ -1080,6 +1127,9 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
         {
             plyr->player_pos = position_before_move;
             print_output(MOVEMENT_BLOCKED, plyr, 0, NULL, NULL);
+            plyr->mp_score -= 2;
+            plyr->move_value = 0;
+            print_output(COMPLETE_MOVE, plyr, -2, NULL, NULL);
             break;
         }
     }    
@@ -1103,7 +1153,9 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
 void handle_player_state_movement(Player* plyr, int player_index)
 {
     plyr->move_value = movement_dice();
-    if(plyr->throw_count % 4 ==0)
+    printf("\n");
+
+    if(plyr->throw_count % 4 ==0 && plyr->throw_count > 0)
     {
         plyr->direction = direction_dice(plyr);
         add_event(START_MOVE_WITH_DIRECTION, NULL, NULL);
@@ -1399,7 +1451,7 @@ int main()
         if(player_index == 0)
         {
             game_round++;
-            printf("GAME ROUND: %d\n", game_round);
+            printf("\nGAME ROUND: %d\n", game_round);
         }
         if(game_round % GAME_SETTING == 0) change_stair_direction();
 

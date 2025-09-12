@@ -175,4 +175,11 @@ typedef struct
     EventData data;
 } MoveEvent;
 
+typedef struct {
+    char name;
+    PlayerDirection direction;
+    int start_floor, start_w, start_l;   // starting cell
+    int first_floor, first_w, first_l;   // first cell after spawn
+} PlayerInit;
+
 #endif
