@@ -150,10 +150,10 @@ extern Cell cells[NUM_OF_FLOORS][MAX_WIDTH][MAX_LENGTH];
 
 /*  Event Handling  */
 
-typedef union 
+typedef struct 
 {
-    Stair* stair_data;
-    bool no_data;
+    Cell* trigger_cell;
+    Cell* dest_cell;
 }EventData;
 
 typedef enum
@@ -163,7 +163,10 @@ typedef enum
     MOVEMENT_BLOCKED,
     COMPLETE_MOVE,
     START_MOVE,
-    START_MOVE_WITH_DIRECTION
+    START_MOVE_WITH_DIRECTION,
+    TAKE_POLE,
+    TAKE_STAIR,
+    PLAYER_WIN
 } MoveResult;
 
 typedef struct

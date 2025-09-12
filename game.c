@@ -20,6 +20,8 @@ bool game_on = true;
 MoveEvent event_list[MAX_EVENTS_PER_EACH_MOVE];
 int front = -1, rear = -1;
 
+char* time_buffer;
+
 void mark_cells(int floor, int start_w, int end_w, int start_l, int end_l, bool is_valid, CellType type) {
     for(int w = start_w; w <= end_w; w++)
         for(int l = start_l; l <= end_l; l++) {
@@ -64,15 +66,15 @@ void init_players()
         players[i].move_value = 0;
         players[i].mp_score = 100;
     }
-    players[0].direction = NORTH;
+    players[0].direction = EAST;
     players[1].direction = WEST;
     players[2].direction = EAST;
 
-    players[0].starting_cell = players[0].player_pos = &cells[0][6][12];
+    players[0].starting_cell = players[0].player_pos = &cells[2][9][16];
     players[1].starting_cell = players[1].player_pos = &cells[0][9][8];
     players[2].starting_cell = players[2].player_pos = &cells[0][9][16];
 
-    players[0].first_cell = players[0].player_pos = &cells[0][5][12];
+    players[0].first_cell = players[0].player_pos = &cells[2][9][15];
     players[1].first_cell = players[1].player_pos = &cells[0][9][7];
     players[2].first_cell = players[2].player_pos = &cells[0][9][17];
 }
@@ -81,15 +83,31 @@ void init_players()
     read input data, validate each line while updating the relevant cells
 */
 
+char* get_current_datetime(char* buffer) 
+{
+    time_t rawtime;
+    time(&rawtime);
+    
+    struct tm* timeinfo = localtime(&rawtime);
+ 
+    if (buffer == NULL) return "[GetCurrentDateTimeFailed]"; 
+
+    strftime(buffer, 20, "%Y-%m-%d %H:%M:%S", timeinfo);
+    
+    return buffer;
+}
+
 void print_file_error(FileErrors error, char filename[], FILE *logfile)
 {
     switch(error)
     {
         case FILE_NOT_OPEN:
-            fprintf(logfile, "[ERROR] Cannot open (file: %s) %s\n", filename);
+            fprintf(logfile, "[ERROR] Cannot open (file: %s) %s\n", filename, get_current_datetime(time_buffer));
+            printf("Game crashed! Check log.txt\n");
             break;
         case EMPTY_FILE:
-            fprintf(logfile, "[ERROR] File is empty (file: %s). No data to process.\n", filename);
+            printf("Game crashed! Check log.txt\n");
+            fprintf(logfile, "[ERROR] File is empty (file: %s). No data to process. %s\n", filename, get_current_datetime(time_buffer));
             break;
         default:
             fprintf(logfile, "[WARN] Unhandled file error detected. Execution may be unstable.\n");
@@ -537,7 +555,7 @@ int validate_file(char filename[])
     if(dataf == NULL)  
     {
         print_file_error(FILE_NOT_OPEN, filename, logf);
-        // exit(1);
+        exit(1);
         return 0;
     }
 
@@ -545,7 +563,7 @@ int validate_file(char filename[])
     if (ch == EOF) 
     {
         print_file_error(EMPTY_FILE, filename, logf);
-        // exit(1);
+        exit(1);
         return 0;
     }
 
@@ -586,10 +604,11 @@ char* get_player_dir_string(Player* plyr)
     case SOUTH: return "South";
     case EAST: return "East";
     case WEST: return "West";
+    default: return "Unknown";
     }
 }
 
-void print_output(MoveResult result, Player* p, int path_cost)
+void print_output(MoveResult result, Player* p, int path_cost, Cell* trigger_cell, Cell* dest_cell)
 {
     switch(result)
     {
@@ -611,8 +630,17 @@ void print_output(MoveResult result, Player* p, int path_cost)
         case START_MOVE_WITH_DIRECTION:
             printf("Player %c rolls and %d on the movement dice and %s on the direction dice, changes direction to %s and moves %d cells and is now at [%d, %d, %d].\n", p->name, p->move_value, get_player_dir_string(p), get_player_dir_string(p), p->move_value, p->player_pos->floor, p->player_pos->width, p->player_pos->length);
             return;
+        case TAKE_POLE:
+            printf("Player %c lands on [%d, %d, %d] which is a pole cell. Player %c slides down an now placed at [%d, %d] in floor %d.\n", p->name, trigger_cell->floor, trigger_cell->width, trigger_cell->length, p->name, dest_cell->width, dest_cell->length, dest_cell->floor);
+            return;
+        case TAKE_STAIR:
+            printf("Player %c lands on [%d, %d, %d] which is a stair cell. Player %c takes the stair and now placed at [%d, %d] in floor %d.\n", p->name, trigger_cell->floor, trigger_cell->width, trigger_cell->length, p->name, dest_cell->width, dest_cell->length, dest_cell->floor);
+            return;
+        case PLAYER_WIN:
+            printf("Player %c lands on [%d, %d, %d] which is the flag cell. Player %c won.\n", p->name, trigger_cell->floor, trigger_cell->width, trigger_cell->length, p->name);
+            return;
         default:
-            printf("Game error while trying to print move output. Contact developers!\n");
+            printf("[PrintOutputError] Please contact developers! %d\n", result);
             exit(1);
     }
 }
@@ -622,11 +650,55 @@ void print_output(MoveResult result, Player* p, int path_cost)
 
 // } BhawanaOutputSignal;
 
-void print_output();
-
 /*
     initiate the move function
 */
+
+bool event_list_full()
+{
+    return ((rear + 1) % MAX_EVENTS_PER_EACH_MOVE) == front;
+}
+
+bool event_list_empty()
+{
+    return front == -1;
+}
+
+void add_event(MoveResult event_type, Cell* trigger_cell, Cell* dest_cell)
+{
+    if(event_list_full())
+    {
+        printf("[EventListFullError] Please contact developers!\n");
+        exit(1);
+    }
+    rear = (rear + 1) % MAX_EVENTS_PER_EACH_MOVE;
+    if(event_list_empty()) front = 0;
+    event_list[rear].event = event_type;     
+    event_list[rear].data.trigger_cell = trigger_cell;
+    event_list[rear].data.dest_cell = dest_cell;
+}
+
+void print_event_list(Player* plyr, int path_cost)
+{
+    if(event_list_empty())
+    {
+       return;  //no events to print 
+    }
+
+    int i = front;
+    while (true) 
+    {
+        print_output(event_list[i].event, plyr, path_cost, event_list[i].data.trigger_cell, event_list[i].data.dest_cell);
+        if (i == rear) break;
+        i = (i + 1) % MAX_EVENTS_PER_EACH_MOVE;
+    }
+}
+
+void reset_event_list()
+{
+    front = rear = -1;
+}
+
 int movement_dice()
 {
     return ((rand() % 6) + 1);
@@ -683,7 +755,7 @@ Bounds move_one_cell(Player* plyr, PlayerDirection dir)
 
     if(width < 0)
     {
-        return NORTH_BOUND;     // [LATER] add custom output
+        return NORTH_BOUND;   
     }
     else if(width >= MAX_WIDTH)
     {
@@ -819,6 +891,7 @@ HandlerResult handle_stair_end(Player* plyr, int* ignore_val)
 
 HandlerResult handle_pole_enter(Player* plyr, int* ignore_val)
 {
+    add_event(TAKE_POLE, plyr->player_pos, plyr->player_pos->data.pole_data.dest_cell);
     plyr->player_pos = plyr->player_pos->data.pole_data.dest_cell;
     return CONTINUE_STEP;
 }
@@ -925,62 +998,17 @@ PlayerDirection generate_player_direction()
     }
 }
 
-
-bool event_list_full()
-{
-    return ((rear + 1) % MAX_EVENTS_PER_EACH_MOVE) == front;
-}
-
-bool event_list_empty()
-{
-    return front == -1;
-}
-
-void add_event(MoveResult event_type)
-{
-    if(event_list_full())
-    {
-        printf("[EventListFullError] Please contact developer!\n");
-        exit(1);
-    }
-    rear = (rear + 1) % MAX_EVENTS_PER_EACH_MOVE;
-    if(event_list_empty()) front = 0;
-    event_list[rear].event = event_type; 
-}
-
-void print_event_list(Player* plyr, int path_cost)
-{
-    if(event_list_empty())
-    {
-       return;  //no events to print 
-    }
-
-
-    printf("front is %d and rear is %d\n", front, rear);
-    int i = front;
-    while (true) 
-    {
-        print_output(event_list[i].event, plyr, path_cost);
-        if (i == rear) break;
-        i = (i + 1) % MAX_EVENTS_PER_EACH_MOVE;
-    }
-}
-
-void reset_event_list()
-{
-    front = rear = -1;
-}
-
 void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int player_index)
 {
     Cell* position_before_move = plyr->player_pos;
     int path_cost = 0;
+
     for(int step = 0; step < plyr->move_value; step++)
     {
         if(move_one_cell(plyr, move_direction) != NO_BOUNDS)
         {
             plyr->player_pos = position_before_move;
-            print_output(MOVEMENT_BLOCKED, plyr, 0);
+            print_output(MOVEMENT_BLOCKED, plyr, 0, NULL, NULL);
             goto partial_move;    //terminates step
         }
 
@@ -998,14 +1026,14 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
                     else if(step_result == ABORT_MOVE)
                     {
                         plyr->player_pos = position_before_move;
-                        print_output(MOVEMENT_BLOCKED, plyr, 0);
+                        print_output(MOVEMENT_BLOCKED, plyr, 0, NULL, NULL);
                         goto partial_move;
                     }
                     else    //game won
                     {
                         game_on = false;
-                        printf("Player %c has win.\n", plyr->name);
-                        return;
+                        add_event(PLAYER_WIN, plyr->player_pos, NULL);
+                        goto player_has_won;
                     }
                 }   
             }
@@ -1013,13 +1041,14 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
         else
         {
             plyr->player_pos = position_before_move;
+            print_output(MOVEMENT_BLOCKED, plyr, 0, NULL, NULL);
             break;
         }
-    }
+    }    
     capture_player(player_index);
     plyr->mp_score += path_cost;
-    add_event(COMPLETE_MOVE);
-    print_event_list(plyr, path_cost);
+    add_event(COMPLETE_MOVE, NULL, NULL);
+
     if(plyr->mp_score <= 0)
     {
         // plyr->player_pos = &cells[0][(rand() % 3) + 7][(rand() % 4) + 21];
@@ -1027,6 +1056,9 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
         player_to_bhawana(plyr);
     }
     
+    player_has_won:;
+    print_event_list(plyr, path_cost);
+
     partial_move:;
     plyr->throw_count++;
 }
@@ -1037,9 +1069,9 @@ void handle_player_state_movement(Player* plyr, int player_index)
     if(plyr->throw_count % 4 ==0)
     {
         plyr->direction = direction_dice(plyr);
-        add_event(START_MOVE_WITH_DIRECTION);
+        add_event(START_MOVE_WITH_DIRECTION, NULL, NULL);
     }
-    else add_event(START_MOVE);
+    else add_event(START_MOVE, NULL, NULL);
 
     if(plyr->player_state == ACTIVE)
     {
@@ -1053,11 +1085,11 @@ void handle_player_state_movement(Player* plyr, int player_index)
             {
                 plyr->player_pos = plyr->first_cell;
                 plyr->player_state = ACTIVE;
-                print_output(EXIT_STARTING_AREA, plyr, 0);
+                print_output(EXIT_STARTING_AREA, plyr, 0, NULL, NULL);
             }
             else
             {
-                print_output(REMAIN_AT_SPAWN, plyr, 0);
+                print_output(REMAIN_AT_SPAWN, plyr, 0, NULL, NULL);
             }
         } 
         else
@@ -1245,19 +1277,19 @@ void init_bhawana()
 //for compilation purpose only
 int main()
 {
+    time_buffer = (char*)malloc(20 * sizeof(char));
+    stairs_array = malloc(stair_array_capacity * sizeof(Stair*));
+
     srand(time(NULL));
     init_cells();
     init_players();
-
-    stairs_array = malloc(stair_array_capacity * sizeof(Stair*));
-    
     init_bhawana();
     read_data();
     set_normal_cells();
 
+    free(time_buffer);
+
     int player_index = 0;
-    // int max_turns = 20;
-    //  && (max_turns--)>0
     while(game_on)
     {
         if(player_index == 0)
