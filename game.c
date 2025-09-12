@@ -16,11 +16,13 @@ Cell* bhawana_entrance_cell_ptr;
 int game_round = 0;
 bool game_on = true;
 
-#define MAX_EVENTS_PER_EACH_MOVE 6
+#define MAX_EVENTS_PER_EACH_MOVE 12
 MoveEvent event_list[MAX_EVENTS_PER_EACH_MOVE];
 int front = -1, rear = -1;
 
 char* time_buffer;
+
+FILE* log_fp;
 
 void mark_cells(int floor, int start_w, int end_w, int start_l, int end_l, bool is_valid, CellType type) {
     for(int w = start_w; w <= end_w; w++)
@@ -97,74 +99,74 @@ char* get_current_datetime(char* buffer)
     return buffer;
 }
 
-void print_file_error(FileErrors error, char filename[], FILE *logfile)
+void print_file_error(FileErrors error, char filename[])
 {
     switch(error)
     {
         case FILE_NOT_OPEN:
-            fprintf(logfile, "[ERROR] Cannot open (file: %s) %s\n", filename, get_current_datetime(time_buffer));
+            fprintf(log_fp, "[ERROR] Cannot open (file: %s) %s\n", filename, get_current_datetime(time_buffer));
             printf("Game crashed! Check log.txt\n");
             break;
         case EMPTY_FILE:
             printf("Game crashed! Check log.txt\n");
-            fprintf(logfile, "[ERROR] File is empty (file: %s). No data to process. %s\n", filename, get_current_datetime(time_buffer));
+            fprintf(log_fp, "[ERROR] File is empty (file: %s). No data to process. %s\n", filename, get_current_datetime(time_buffer));
             break;
         default:
-            fprintf(logfile, "[WARN] Unhandled file error detected. Execution may be unstable.\n");
+            fprintf(log_fp, "[WARN] Unhandled file error detected. Execution may be unstable.\n");
     }
 }
 
-void print_file_error_line(FileErrors error, char filename[], FILE *logfile, int line_number)
+void print_file_error_line(FileErrors error, char filename[], int line_number)
 {
     switch (error)
     {
         case INVALID_NUM_DIGITS:
-            fprintf(logfile, "[WARN] Invalid number of digits (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN] Invalid number of digits (file %s, line %d). Line skipped.\n", filename, line_number);
             break;
         case NO_DIGITS:
-            fprintf(logfile, "[WARN] No digits found (file %s, line %d). Line skipped\n", filename, line_number);
+            fprintf(log_fp, "[WARN] No digits found (file %s, line %d). Line skipped\n", filename, line_number);
             break;
         case INVALID_FORMAT_LINE:
-            fprintf(logfile, "[WARN] Invalid format (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN] Invalid format (file %s, line %d). Line skipped.\n", filename, line_number);
             break;
         default: 
-            fprintf(logfile, "[WARN] Unhandled file error detected. Execution may be unstable.\n");
+            fprintf(log_fp, "[WARN] Unhandled file error detected. Execution may be unstable.\n");
     }
 }
 
-void print_range_error(RangeError error, char filename[], FILE* logfile, int line_number)
+void print_range_error(RangeError error, char filename[], int line_number)
 {
     switch(error)
     {
         case FLOOR:
-            fprintf(logfile, "[WARN] Range error on floor (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN] Range error on floor (file %s, line %d). Line skipped.\n", filename, line_number);
             break;
         case START_FLOOR:
-            fprintf(logfile, "[WARN] Range error on start floor (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN] Range error on start floor (file %s, line %d). Line skipped.\n", filename, line_number);
             break;
         case END_FLOOR:
-            fprintf(logfile, "[WARN] Range error on end floor (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN] Range error on end floor (file %s, line %d). Line skipped.\n", filename, line_number);
             break;
         case START_WIDTH:
-            fprintf(logfile, "[WARN] Range error on start width (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN] Range error on start width (file %s, line %d). Line skipped.\n", filename, line_number);
             break;
         case START_LENGTH:
-            fprintf(logfile, "[WARN] Range error on start length (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN] Range error on start length (file %s, line %d). Line skipped.\n", filename, line_number);
             break;
         case END_WIDTH:
-            fprintf(logfile, "[WARN] Range error on end width (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN] Range error on end width (file %s, line %d). Line skipped.\n", filename, line_number);
             break;
         case END_LENGTH:
-            fprintf(logfile, "[WARN] Range error on end length (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN] Range error on end length (file %s, line %d). Line skipped.\n", filename, line_number);
             break;
         case WIDTH:
-            fprintf(logfile, "[WARN] Range error on width (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN] Range error on width (file %s, line %d). Line skipped.\n", filename, line_number);
             break;
         case LENGTH:
-            fprintf(logfile, "[WARN] Range error on length (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN] Range error on length (file %s, line %d). Line skipped.\n", filename, line_number);
             break;
         default: 
-            fprintf(logfile, "[WARN] Unhandled file error detected. Execution may be unstable.\n");
+            fprintf(log_fp, "[WARN] Unhandled file error detected. Execution may be unstable.\n");
     }
 }
 
@@ -177,24 +179,24 @@ void add_cell_type(Cell *c, int type)
     c->celltypes |= type;
 }
 
-void load_flag(int* digits, char filename[], FILE* logfile, int num_lines)
+void load_flag(int* digits, char filename[], int num_lines)
 {
     int floor = digits[0];
     int width_num = digits[1];
     int length_num = digits[2];
     if( floor<0 || floor>2 ) 
     {
-        print_range_error(FLOOR, filename, logfile, num_lines); 
+        print_range_error(FLOOR, filename, num_lines); 
         return;
     }
     if( width_num<0 || width_num>9 ) 
     {
-        print_range_error(WIDTH, filename, logfile, num_lines); 
+        print_range_error(WIDTH, filename, num_lines); 
         return;
     }
     if( length_num<0 || length_num>24 ) 
     {
-        print_range_error(LENGTH, filename, logfile, num_lines); 
+        print_range_error(LENGTH, filename, num_lines); 
         return;
     }
     //Init flag
@@ -206,29 +208,29 @@ void load_flag(int* digits, char filename[], FILE* logfile, int num_lines)
 }
 
 
-void load_poles(int* digits, char filename[], FILE* logfile, int num_lines)
+void load_poles(int* digits, char filename[], int num_lines)
 {
     int exit_floor = digits[0], enter_floor = digits[1];
     int width_num = digits[2], length_num = digits[3];
 
     if( exit_floor!=1 && exit_floor!=0 ) 
     {
-        print_range_error(END_FLOOR, filename, logfile, num_lines); 
+        print_range_error(END_FLOOR, filename, num_lines); 
         return;
     }
     if( enter_floor!=1 && enter_floor!=2 ) 
     {
-        print_range_error(START_FLOOR, filename, logfile, num_lines); 
+        print_range_error(START_FLOOR, filename, num_lines); 
         return;
     }
     if( width_num<0 || width_num>=MAX_WIDTH ) 
     {
-        print_range_error(WIDTH, filename, logfile, num_lines); 
+        print_range_error(WIDTH, filename, num_lines); 
         return;
     }
     if( length_num<0 || length_num>=MAX_LENGTH ) 
     {
-        print_range_error(LENGTH, filename, logfile, num_lines); 
+        print_range_error(LENGTH, filename, num_lines); 
         return;
     }
     //Handle conditions, return _numif a condition is false, if get to the last statement add the pole
@@ -264,39 +266,39 @@ void load_poles(int* digits, char filename[], FILE* logfile, int num_lines)
 
 }
 
-void load_stairs(int* digits, char filename[], FILE* logfile, int num_lines)
+void load_stairs(int* digits, char filename[], int num_lines)
 {
     int start_floor = digits[0], start_width_num = digits[1], start_length_num = digits[2];
     int end_floor = digits[3], end_width_num = digits[4], end_length_num = digits[5];
 
     if( start_floor<0 || start_floor>1 ) 
     {
-        print_range_error(START_FLOOR, filename, logfile, num_lines); 
+        print_range_error(START_FLOOR, filename, num_lines); 
         return;
     }
     if( start_width_num<0 || start_width_num>=MAX_WIDTH ) 
     {
-        print_range_error(START_WIDTH, filename, logfile, num_lines); 
+        print_range_error(START_WIDTH, filename, num_lines); 
         return;
     }
     if( start_length_num<0 || start_length_num>=MAX_LENGTH ) 
     {
-        print_range_error(START_LENGTH, filename, logfile, num_lines); 
+        print_range_error(START_LENGTH, filename, num_lines); 
         return;
     }
     if( end_floor!=1 && end_floor!=2 ) 
     {
-        print_range_error(END_FLOOR, filename, logfile, num_lines); 
+        print_range_error(END_FLOOR, filename, num_lines); 
         return;
     }
     if( end_width_num<0 || end_width_num>=MAX_WIDTH ) 
     {
-        print_range_error(END_WIDTH, filename, logfile, num_lines); 
+        print_range_error(END_WIDTH, filename, num_lines); 
         return;
     }
     if( end_length_num<0 || end_length_num>=MAX_LENGTH ) 
     {
-        print_range_error(END_LENGTH, filename, logfile, num_lines); 
+        print_range_error(END_LENGTH, filename, num_lines); 
         return;
     }
 
@@ -363,34 +365,34 @@ int check_wall_init_conditions(Cell* cell)
     }
 }
 
-void load_walls(int* digits, char filename[], FILE* logfile, int num_lines)
+void load_walls(int* digits, char filename[], int num_lines)
 {
     int floor = digits[0], start_width_num = digits[1], start_length_num = digits[2];
     int end_width_num = digits[3], end_length_num = digits[4];
 
     if( floor<0 || floor>2 ) 
     {
-        print_range_error(START_FLOOR, filename, logfile, num_lines); 
+        print_range_error(START_FLOOR, filename, num_lines); 
         return;
     }
     if( start_width_num<0 || start_width_num>=MAX_WIDTH ) 
     {
-        print_range_error(START_WIDTH, filename, logfile, num_lines); 
+        print_range_error(START_WIDTH, filename, num_lines); 
         return;
     }
     if( start_length_num<0 || start_length_num>=MAX_LENGTH ) 
     {
-        print_range_error(START_LENGTH, filename, logfile, num_lines); 
+        print_range_error(START_LENGTH, filename, num_lines); 
         return;
     }
     if( end_width_num<0 || end_width_num>=MAX_WIDTH ) 
     {
-        print_range_error(END_WIDTH, filename, logfile, num_lines); 
+        print_range_error(END_WIDTH, filename, num_lines); 
         return;
     }
     if( end_length_num<0 || end_length_num>=MAX_LENGTH ) 
     {
-        print_range_error(END_LENGTH, filename, logfile, num_lines); 
+        print_range_error(END_LENGTH, filename, num_lines); 
         return;
     }
     //Handle conditions
@@ -465,28 +467,28 @@ void load_walls(int* digits, char filename[], FILE* logfile, int num_lines)
     }
 }
 
-void check_digits(int* digits, int count, char filename[], FILE* logfile, int num_lines)
+void check_digits(int* digits, int count, char filename[], int num_lines)
 {
     switch(count)
     {
         case 6:
-            load_stairs(digits, filename, logfile, num_lines);
+            load_stairs(digits, filename, num_lines);
             break;
         case 5:
-            load_walls(digits, filename, logfile, num_lines);
+            load_walls(digits, filename, num_lines);
             break;
         case 4:
-            load_poles(digits, filename, logfile, num_lines);
+            load_poles(digits, filename, num_lines);
             break;
         case 3:
-            load_flag(digits, filename, logfile, num_lines);
+            load_flag(digits, filename, num_lines);
             break;
         default:
-            print_file_error_line(INVALID_NUM_DIGITS, filename, logfile, num_lines);
+            print_file_error_line(INVALID_NUM_DIGITS, filename, num_lines);
     }
 }
 
-int parse_and_process_line(const char* line, char filename[], FILE* logfile, int num_lines)
+int parse_and_process_line(const char* line, char filename[], int num_lines)
 {
     const char* p =  line;
     
@@ -532,11 +534,11 @@ int parse_and_process_line(const char* line, char filename[], FILE* logfile, int
     if(count > 0)
     {
 
-        check_digits(digits_array, count, filename, logfile, num_lines);
+        check_digits(digits_array, count, filename, num_lines);
     }
     else
     {
-        print_file_error_line(NO_DIGITS, filename, logfile, num_lines);
+        print_file_error_line(NO_DIGITS, filename, num_lines);
     }
     
     return 1;
@@ -544,17 +546,12 @@ int parse_and_process_line(const char* line, char filename[], FILE* logfile, int
 
 int validate_file(char filename[])
 {
-    FILE* logf = fopen("log.txt", "w");
-    if(logf == NULL) perror("log.txt crashed!");
-    fclose(logf);
-
-    logf = fopen("log.txt", "a");
-    if(logf == NULL) perror("log.txt crashed!");
+    
     
     FILE* dataf = fopen(filename, "r");
     if(dataf == NULL)  
     {
-        print_file_error(FILE_NOT_OPEN, filename, logf);
+        print_file_error(FILE_NOT_OPEN, filename);
         exit(1);
         return 0;
     }
@@ -562,7 +559,7 @@ int validate_file(char filename[])
     int ch = fgetc(dataf);
     if (ch == EOF) 
     {
-        print_file_error(EMPTY_FILE, filename, logf);
+        print_file_error(EMPTY_FILE, filename);
         exit(1);
         return 0;
     }
@@ -575,13 +572,12 @@ int validate_file(char filename[])
     while(fgets(buffer, sizeof(buffer), dataf))     
     {
         buffer[strcspn(buffer, "\n")] = '\0';       
-        if(!parse_and_process_line(buffer, filename, logf, line_num))
+        if(!parse_and_process_line(buffer, filename, line_num))
         {
-            print_file_error_line(INVALID_FORMAT_LINE, filename, logf, line_num);
+            print_file_error_line(INVALID_FORMAT_LINE, filename, line_num);
         }
         line_num++;
     }
-    fclose(logf);
     fclose(dataf);
     return 1;
 }
@@ -694,6 +690,11 @@ void print_event_list(Player* plyr, int path_cost)
     }
 }
 
+MoveResult peek_last_event()
+{
+    return event_list[rear].event;
+}
+
 void reset_event_list()
 {
     front = rear = -1;
@@ -780,6 +781,44 @@ typedef enum {
     WIN_GAME
 } HandlerResult;
 
+void player_to_bhawana(Player* plyr)
+{
+    if(check_cell_types(plyr->player_pos, BHAWANA_BONUS))
+    {
+        plyr->player_state = ACTIVE;
+        plyr->mp_score = (rand() % 91) + 10;
+        plyr->player_pos = bhawana_entrance_cell_ptr;
+        plyr->direction = NORTH;
+    }
+    else if(check_cell_types(plyr->player_pos, BHAWANA_FOOD_POISONING))
+    {
+        plyr->player_state = FOOD_POISONED;
+        plyr->effect_turns = 3;
+    }   
+    else if(check_cell_types(plyr->player_pos, BHAWANA_DISORIENT))
+    {
+        plyr->player_state = DISORIENTED;
+        plyr->mp_score = 50;
+        plyr->player_pos = bhawana_entrance_cell_ptr;
+        plyr->direction = NORTH;
+        plyr->effect_turns = 4;
+    }
+    else if(check_cell_types(plyr->player_pos, BHAWANA_TRIGGER))
+    {
+        plyr->player_state = TRIGGERED;
+        plyr->mp_score = 50;
+        plyr->player_pos = bhawana_entrance_cell_ptr;
+        plyr->direction = NORTH;
+    }
+    else if(check_cell_types(plyr->player_pos, BHAWANA_HAPPY))
+    {
+        plyr->player_state = ACTIVE;    
+        plyr->mp_score = 200;
+        plyr->player_pos = bhawana_entrance_cell_ptr;
+        plyr->direction = NORTH;
+    }
+}
+
 typedef HandlerResult (*CellHandler)(Player*, int*);
 
 HandlerResult handle_normal_consumable(Player* plyr, int* cost)
@@ -804,6 +843,32 @@ HandlerResult handle_normal_bonus(Player* plyr, int* cost)
 HandlerResult handle_wall(Player* plyr, int* ignore_val)
 {
     return ABORT_MOVE;
+}
+
+typedef struct
+{
+    int flag;
+    CellHandler handler;
+} CellAction;
+
+static const CellAction actions[];
+HandlerResult check_landed_cell(Player* plyr)
+{
+    for(int i = 0; i < 2; i++)
+    {
+        if(plyr->player_pos->celltypes & actions[i].flag)
+        {
+            HandlerResult step_result = actions[i].handler(plyr, NULL);
+            if(step_result == WIN_GAME)   
+            {
+                return WIN_GAME;
+            }
+            else
+            {
+                return CONTINUE_STEP;
+            }
+        }
+    }
 }
 
 int score_stair(Cell* stair, Cell* flag) {
@@ -839,8 +904,9 @@ HandlerResult handle_stair(Player* plyr, StairDirection wrong_dir, Cell* stair0_
     {
         if(cell->data.stairs[0]->direction != wrong_dir)
         {
+            add_event(TAKE_STAIR, plyr->player_pos, stair0_dest_cell);
             plyr->player_pos = stair0_dest_cell;
-            return CONTINUE_STEP;
+            return check_landed_cell(plyr);
         }
         else return ABORT_MOVE;
     }
@@ -850,30 +916,36 @@ HandlerResult handle_stair(Player* plyr, StairDirection wrong_dir, Cell* stair0_
         {
             if((cell->data.stairs[0]->direction != wrong_dir) && (cell->data.stairs[1]->direction != wrong_dir))
             {
+                Cell* temp = plyr->player_pos;
                 plyr->player_pos = pick_stair_heuristic(stair0_dest_cell, stair1_dest_cell, cell_flag);
-                return CONTINUE_STEP;
+                add_event(TAKE_STAIR, temp, plyr->player_pos);
+                return check_landed_cell(plyr);
             }
             else if(cell->data.stairs[0]->direction != wrong_dir)
             {
+                add_event(TAKE_STAIR, plyr->player_pos, stair0_dest_cell);
                 plyr->player_pos = stair0_dest_cell;
-                return CONTINUE_STEP;
+                return check_landed_cell(plyr);
             }
             else if(cell->data.stairs[1]->direction != wrong_dir)
             {
+                add_event(TAKE_STAIR, plyr->player_pos, stair0_dest_cell);
                 plyr->player_pos = stair1_dest_cell;
-                return CONTINUE_STEP;
+                return check_landed_cell(plyr);
             }
             else return ABORT_MOVE;
         }
         else if((cell->data.stairs[0]->start_cell == cell)&&(cell->data.stairs[0]->direction != wrong_dir))
         {
+            add_event(TAKE_STAIR, plyr->player_pos, stair0_dest_cell);
             plyr->player_pos = stair0_dest_cell;
-            return CONTINUE_STEP;
+            return check_landed_cell(plyr);
         }
         else if((cell->data.stairs[1]->start_cell == cell)&&(cell->data.stairs[1]->direction != wrong_dir))
         {
+            add_event(TAKE_STAIR, plyr->player_pos, stair1_dest_cell);
             plyr->player_pos = stair1_dest_cell;
-            return CONTINUE_STEP;
+            return check_landed_cell(plyr);
         }
         else return ABORT_MOVE;
     }
@@ -893,7 +965,7 @@ HandlerResult handle_pole_enter(Player* plyr, int* ignore_val)
 {
     add_event(TAKE_POLE, plyr->player_pos, plyr->player_pos->data.pole_data.dest_cell);
     plyr->player_pos = plyr->player_pos->data.pole_data.dest_cell;
-    return CONTINUE_STEP;
+    return check_landed_cell(plyr);
 }
 
 HandlerResult handle_no_special_effect_cell(Player* plyr, int* ignore_val)
@@ -903,7 +975,12 @@ HandlerResult handle_no_special_effect_cell(Player* plyr, int* ignore_val)
 
 HandlerResult handle_starting_area(Player* plyr, int* ignore_val)
 {
-    //can be called because a player went staright to the starting area or went through a pole or a stair. need to handle both
+    MoveResult prev_move = peek_last_event();
+    if(prev_move == TAKE_STAIR || prev_move == TAKE_POLE)
+    {
+       plyr->player_pos = plyr->starting_cell;
+       plyr->player_state = INACTIVE; 
+    }
     return ABORT_MOVE;
 }
 
@@ -912,28 +989,25 @@ HandlerResult handle_flag(Player* plyr, int* ignore_val)
     return WIN_GAME;
 }
 
-HandlerResult handle_bhawana(Player* plyr, int* ignore_val)
+HandlerResult handle_bhawana(Player* plyr, int* path_cost)  //only get called when a player went to bhawana through a pole/stair
 {
+    player_to_bhawana(plyr);
+    print_event_list(plyr, *path_cost);
+    reset_event_list();
     return ABORT_MOVE;
 }
 
-typedef struct
-{
-    int flag;
-    CellHandler handler;
-} CellAction;
-
 static const CellAction actions[] = {                           //order matters [CHECK]
     { CELL_FLAG,                handle_flag             },
-    { CELL_NORMAL_CONSUMABLE,   handle_normal_consumable},
-    { CELL_NORMAL_BONUS,        handle_normal_bonus     },
-    { CELL_POLE_ENTER,          handle_pole_enter       },
+    { CELL_BHAWANA,             handle_bhawana          },
     { CELL_STAIR_START,         handle_stair_start      },
     { CELL_STAIR_END,           handle_stair_end        },
-    { CELL_WALL,                handle_wall             },
+    { CELL_POLE_ENTER,          handle_pole_enter       },
+    { CELL_NORMAL_BONUS,        handle_normal_bonus     },
+    { CELL_NORMAL_CONSUMABLE,   handle_normal_consumable},
     { CELL_POLE_EXIT,           handle_no_special_effect_cell   },
+    { CELL_WALL,                handle_wall             },
     { CELL_STARTING_AREA,       handle_starting_area            },
-    { CELL_BHAWANA,             handle_bhawana                  },
     { CELL_NONE,                handle_no_special_effect_cell   },
 };
 
@@ -950,43 +1024,6 @@ void capture_player(int current_player_index)
     }
 }
 
-void player_to_bhawana(Player* plyr)
-{
-    plyr->player_pos = &cells[0][(rand() % 3) + 7][(rand() % 4) + 21];
-    if(check_cell_types(plyr->player_pos, BHAWANA_BONUS))
-    {
-        plyr->player_state = ACTIVE;
-        plyr->mp_score = (rand() % 91) + 10;
-        plyr->player_pos = bhawana_entrance_cell_ptr;
-    }
-    else if(check_cell_types(plyr->player_pos, BHAWANA_FOOD_POISONING))
-    {
-        plyr->player_state = FOOD_POISONED;
-        plyr->effect_turns = 3;
-    }   
-    else if(check_cell_types(plyr->player_pos, BHAWANA_DISORIENT))
-    {
-        plyr->player_state = DISORIENTED;
-        plyr->mp_score = 50;
-        plyr->player_pos = bhawana_entrance_cell_ptr;
-        plyr->effect_turns = 4;
-        //player moves in a random direction for each time for the next 4 throws, override the direction dice
-    }
-    else if(check_cell_types(plyr->player_pos, BHAWANA_TRIGGER))
-    {
-        plyr->player_state = TRIGGERED;
-        plyr->mp_score = 50;
-        plyr->player_pos = bhawana_entrance_cell_ptr;
-        //moves twices as fast(? for how many moves)
-    }
-    else if(check_cell_types(plyr->player_pos, BHAWANA_HAPPY))
-    {
-        plyr->player_state = ACTIVE;    
-        plyr->mp_score = 200;
-        plyr->player_pos = bhawana_entrance_cell_ptr;
-    }
-}
-
 PlayerDirection generate_player_direction()
 {
     switch(rand() % 4)
@@ -998,12 +1035,12 @@ PlayerDirection generate_player_direction()
     }
 }
 
-void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int player_index)
+void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int player_index, int move_factor)
 {
     Cell* position_before_move = plyr->player_pos;
     int path_cost = 0;
 
-    for(int step = 0; step < plyr->move_value; step++)
+    for(int step = 0; step < (plyr->move_value * move_factor); step++)
     {
         if(move_one_cell(plyr, move_direction) != NO_BOUNDS)
         {
@@ -1027,6 +1064,7 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
                     {
                         plyr->player_pos = position_before_move;
                         print_output(MOVEMENT_BLOCKED, plyr, 0, NULL, NULL);
+                        plyr->mp_score -= 2;
                         goto partial_move;
                     }
                     else    //game won
@@ -1051,8 +1089,7 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
 
     if(plyr->mp_score <= 0)
     {
-        // plyr->player_pos = &cells[0][(rand() % 3) + 7][(rand() % 4) + 21];
-        // apply bhawana effects
+        plyr->player_pos = &cells[0][(rand() % 3) + 7][(rand() % 4) + 21];  //place player on a random cell in bhawana
         player_to_bhawana(plyr);
     }
     
@@ -1075,7 +1112,7 @@ void handle_player_state_movement(Player* plyr, int player_index)
 
     if(plyr->player_state == ACTIVE)
     {
-        handle_cell_traversal(plyr, plyr->direction, player_index);
+        handle_cell_traversal(plyr, plyr->direction, player_index, 1);
     }
     else
     {
@@ -1116,11 +1153,19 @@ void handle_player_state_movement(Player* plyr, int player_index)
                         plyr->player_state = ACTIVE;
                         return;
                     }
-                    handle_cell_traversal(plyr, generate_player_direction(), player_index);
+                plyr->effect_turns--;
+                handle_cell_traversal(plyr, generate_player_direction(), player_index, 1);
                 }
-                else
+                else 
                 {
-                    printf("The Player %c didn't matched any states.\n", plyr->name);
+                    if(plyr->player_state == TRIGGERED)
+                    {
+                        handle_cell_traversal(plyr, generate_player_direction(), player_index, 2);
+                    }
+                    else
+                    {
+                        printf("PLYR_STATE_MOVE_ERR : Please Contact support@example.com\n", plyr->name);
+                    }
                 }
             }
         }
@@ -1274,19 +1319,78 @@ void init_bhawana()
     add_cell_type(&cells[0][couples[11][0]][couples[11][1]], BHAWANA_HAPPY);
 }
 
+unsigned int get_random_seed() 
+{
+    static bool seeded = false;     //seed for just once
+    if (!seeded) {
+        srand((unsigned int)time(NULL));   
+        seeded = true;
+    }
+    unsigned int random_seed = ((unsigned int)rand() << 16) | ((unsigned int)rand() & 0xFFFF);
+    return random_seed;
+}
+
+void setup_logfile()
+{
+    log_fp = fopen("log.txt", "w");
+    if(log_fp == NULL) perror("log.txt crashed!");
+    fclose(log_fp);
+
+    log_fp = fopen("log.txt", "a");
+    if(log_fp == NULL) perror("log.txt crashed!");
+}
+
+unsigned int get_seed()
+{
+    setup_logfile();
+
+    FILE* seed_fp = fopen("seed.txt", "r");
+    if(seed_fp == NULL)
+    {
+        print_file_error(FILE_NOT_OPEN, "seed.txt");
+        return get_random_seed();   
+    }
+    if(fgetc(seed_fp) == EOF)
+    {
+        print_file_error(EMPTY_FILE, "seed.txt");
+        return get_random_seed();
+    }
+
+    unsigned int value;
+    int matched = fscanf(seed_fp, "%u", &value);
+
+    if (matched != 1)   // If no unsigned int was found
+    {
+        // maybe create a custom type for print_file_error and send the error but all the calls have to be updated then
+        fclose(seed_fp);
+        return get_random_seed();
+    }
+    
+    int ch;
+    while ((ch = fgetc(seed_fp)) != EOF) { 
+        if (!isspace(ch)) 
+        {  
+            //print warning invalid format in seed.txt but will continue with the found seed 
+        }
+    }
+    fclose(seed_fp);
+    return value;
+}
+
 //for compilation purpose only
 int main()
 {
     time_buffer = (char*)malloc(20 * sizeof(char));
     stairs_array = malloc(stair_array_capacity * sizeof(Stair*));
 
-    srand(time(NULL));
+    srand(get_seed());
     init_cells();
     init_players();
     init_bhawana();
     read_data();
     set_normal_cells();
 
+    fclose(log_fp);
     free(time_buffer);
 
     int player_index = 0;

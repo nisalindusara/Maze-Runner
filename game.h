@@ -65,7 +65,7 @@ typedef enum
     NO_DIGITS, 
     FILE_NOT_OPEN, 
     EMPTY_FILE, 
-    INVALID_FORMAT_LINE
+    INVALID_FORMAT_LINE,
 } FileErrors;
 
 typedef enum 
