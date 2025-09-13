@@ -1,7 +1,12 @@
 #ifndef GAME_H
 #define GAME_H
 
-//Library inclusion 
+/* -------------------- PUBLIC API -------------------- */
+void play_game(void);
+
+/* -------------------- INTERNAL TYPES & FUNCTIONS -------------------- */
+#ifdef GAME_INTERNAL   // only visible to game.c
+ 
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -9,13 +14,14 @@
 #include <string.h>
 #include <time.h>
 
-//MACROS
 #define NUM_OF_PLAYERS 3
 #define NUM_OF_FLOORS 3
 #define MAX_WIDTH 10
 #define MAX_LENGTH 25
 
-/* -------------------- Enum declarations -------------------- */
+#define GAME_SETTING 5
+#define MAX_LINE_LEN 256
+#define MAX_EVENTS_PER_EACH_MOVE 12
 
 typedef enum 
 {
@@ -83,8 +89,6 @@ typedef enum
 
 typedef enum {START_FLOOR_LARGE} ConditionErrors;
 
-/* -------------------- Teleports / Stairs / Movement -------------------- */
-
 typedef struct Cell Cell; //forward declaration of Cell
 typedef struct
 {
@@ -103,7 +107,6 @@ typedef struct
     StairDirection direction;
 } Stair;
 
-/* -------------------- cell data -------------------- */
 typedef struct 
 {
     bool access_pole;
@@ -115,8 +118,6 @@ typedef struct
     bool has_movementpoint;
     MovementPointData mpdata;
 } CellData;
-
-/* -------------------- Cell structure -------------------- */
 typedef struct Cell
 {
     int floor;
@@ -126,8 +127,6 @@ typedef struct Cell
     int celltypes;
     CellData data;
 }Cell;
-
-/* -------------------- Player structure -------------------- */
 
 typedef struct
 {
@@ -143,12 +142,9 @@ typedef struct
     int effect_turns;
 } Player;
 
-//Variable declarations
 extern int game_round;
 extern Player players[NUM_OF_PLAYERS];
 extern Cell cells[NUM_OF_FLOORS][MAX_WIDTH][MAX_LENGTH];
-
-/*  Event Handling  */
 
 typedef struct 
 {
@@ -188,6 +184,29 @@ typedef struct {
     int first_floor, first_w, first_l;   // first cell after spawn
 } PlayerInit;
 
-void play_game();
+typedef enum
+{
+  NO_BOUNDS,
+  NORTH_BOUND,
+  SOUTH_BOUND,
+  EAST_BOUND,
+  WEST_BOUND
+} Bounds;
 
-#endif
+typedef enum {
+    CONTINUE_STEP,
+    ABORT_MOVE,
+    WIN_GAME
+} HandlerResult;
+
+typedef HandlerResult (*CellHandler)(Player*, int*);
+
+typedef struct
+{
+    int flag;
+    CellHandler handler;
+} CellAction;
+
+#endif  //GAME_INTERNAL
+
+#endif  //GAME_H

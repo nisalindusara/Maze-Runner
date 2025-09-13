@@ -1,16 +1,15 @@
+#define GAME_INTERNAL
 #include "game.h"
 
 /* ======================== GLOBAL VAR DECLARATION ======================== */
 
-#define GAME_SETTING 5
-#define MAX_LINE_LEN 256
-
 Player players[NUM_OF_PLAYERS];
 Cell cells[NUM_OF_FLOORS][MAX_WIDTH][MAX_LENGTH];
 
-Stair** stairs_array;           //dynamic array of all stairs
-int stair_count = 0;            //number of stairs
-int stair_array_capacity = 6;   //initial capacity
+//dynamic array of all stairs
+Stair** stairs_array;           
+int stair_count = 0;            
+int stair_array_capacity = 6;   
 
 Cell* cell_flag;
 Cell* bawana_entrance_cell_ptr;
@@ -18,7 +17,6 @@ Cell* bawana_entrance_cell_ptr;
 int game_round = 0;
 bool game_on = true;
 
-#define MAX_EVENTS_PER_EACH_MOVE 12
 MoveEvent event_list[MAX_EVENTS_PER_EACH_MOVE];
 int front = -1, rear = -1;
 
@@ -813,10 +811,11 @@ void read_data()
     }
 }
 
-/* ======================== UTILITY FUNCTIONS ======================== */
+/* ================ UTILITY FUNCTIONS FOR PLAYER MOVE ================ */
 
 /*
-    Functions that support player movement functions.
+    Functions that support player movement functions and functions that 
+    support player movement.
 */
 
 char* get_player_dir_string(PlayerDirection dir)
@@ -898,6 +897,41 @@ void print_output(MoveResult result, Player* p, int path_cost, Cell* trigger_cel
     }
 }
 
+PlayerDirection generate_random_player_direction()
+{
+    switch(rand() % 4)
+    {
+        case 0: return NORTH;
+        case 1: return SOUTH;
+        case 2: return EAST;
+        case 3: return WEST;
+    }
+}
+
+int movement_dice()
+{
+    return ((rand() % 6) + 1);
+}
+
+PlayerDirection direction_dice(Player* plyr)
+{
+    int dir =  (rand() % 6) + 1;
+    switch(dir){
+        case 1:
+            return  plyr->direction;
+        case 2:
+            return NORTH;
+        case 3:
+            return EAST;
+        case 4:
+            return SOUTH;
+        case 5:
+            return WEST;
+        case 6:
+            return plyr->direction;
+    }
+}
+
 /* ======================== EVENT HANDLING FUNCTIONS ======================== */
    
 /*
@@ -957,170 +991,13 @@ void reset_event_list()
     front = rear = -1;
 }
 
-/* ======================== PLAYER MOVEMENT FUNCTIONS ======================== */
+/* ================ SUPPORT FUNCTIONS FOR HANDLER FUNCTIONS ================ */
    
 /*
     Handle player movement logic, updating player position,
     and validating moves based on player states and environment constraints.
 */
-  
-typedef enum
-{
-  NO_BOUNDS,
-  NORTH_BOUND,
-  SOUTH_BOUND,
-  EAST_BOUND,
-  WEST_BOUND
-} Bounds;
 
-typedef enum {
-    CONTINUE_STEP,
-    ABORT_MOVE,
-    WIN_GAME
-} HandlerResult;
-
-typedef HandlerResult (*CellHandler)(Player*, int*);
-
-typedef struct
-{
-    int flag;
-    CellHandler handler;
-} CellAction;
-
-int movement_dice()
-{
-    return ((rand() % 6) + 1);
-}
-
-PlayerDirection direction_dice(Player* plyr)
-{
-    int dir =  (rand() % 6) + 1;
-    switch(dir){
-        case 1:
-            return  plyr->direction;
-        case 2:
-            return NORTH;
-        case 3:
-            return EAST;
-        case 4:
-            return SOUTH;
-        case 5:
-            return WEST;
-        case 6:
-            return plyr->direction;
-    }
-}
-
-Bounds move_one_cell(Player* plyr, PlayerDirection dir)
-{
-    int floor = plyr->player_pos->floor;
-    int width = plyr->player_pos->width;
-    int length = plyr->player_pos->length;
-
-    switch(dir){
-        case NORTH:
-            width--; //move up
-            break;
-        case SOUTH:
-            width++; //move down
-            break;
-        case EAST:
-            length++; //move left
-            break;
-        case WEST:
-            length--; //move right
-            break;
-    }
-
-    if(width < 0)
-    {
-        return NORTH_BOUND;   
-    }
-    else if(width >= MAX_WIDTH)
-    {
-        return SOUTH_BOUND;
-    }
-    else if(length < 0)
-    {
-        return WEST_BOUND;
-    }
-    else if(length >= MAX_LENGTH)
-    {
-        return EAST_BOUND;
-    }
-    
-    plyr->player_pos = &cells[floor][width][length];
-    return NO_BOUNDS;
-}
-
-void player_to_bawana(Player* plyr)
-{
-    if(check_cell_types(plyr->player_pos, BAWANA_BONUS))
-    {
-        plyr->player_state = ACTIVE;
-        plyr->mp_score = (rand() % 91) + 10;
-        plyr->player_pos = bawana_entrance_cell_ptr;
-        plyr->direction = NORTH;
-        print_output(TO_BAWANA_BONUS, plyr, 0, NULL, NULL);
-    }
-    else if(check_cell_types(plyr->player_pos, BAWANA_FOOD_POISONING))
-    {
-        print_output(TO_BAWANA_FP, plyr, 0, NULL, NULL);
-        plyr->player_state = FOOD_POISONED;
-        plyr->effect_turns = 3;
-    }   
-    else if(check_cell_types(plyr->player_pos, BAWANA_DISORIENT))
-    {
-        print_output(TO_BAWANA_DISORIENT, plyr, 0, NULL, NULL);
-        plyr->player_state = DISORIENTED;
-        plyr->mp_score = 50;
-        plyr->player_pos = bawana_entrance_cell_ptr;
-        plyr->direction = NORTH;
-        plyr->effect_turns = 4;
-    }
-    else if(check_cell_types(plyr->player_pos, BAWANA_TRIGGER))
-    {
-        print_output(TO_BAWANA_TRIGGER, plyr, 0, NULL, NULL);
-        plyr->player_state = TRIGGERED;
-        plyr->mp_score = 50;
-        plyr->player_pos = bawana_entrance_cell_ptr;
-        plyr->direction = NORTH;
-    }
-    else if(check_cell_types(plyr->player_pos, BAWANA_HAPPY))
-    {
-        print_output(TO_BAWANA_HAPPY, plyr, 0, NULL, NULL);
-        plyr->player_state = ACTIVE;    
-        plyr->mp_score = 200;
-        plyr->player_pos = bawana_entrance_cell_ptr;
-        plyr->direction = NORTH;
-    }
-}
-
-HandlerResult handle_normal_consumable(Player* plyr, int* cost)
-{
-    *cost -= plyr->player_pos->data.mpdata.value;
-    return CONTINUE_STEP;
-}
-
-HandlerResult handle_normal_bonus(Player* plyr, int* cost)
-{
-    if(plyr->player_pos->data.mpdata.factor == '+')
-    {
-        *cost += plyr->player_pos->data.mpdata.value;
-    }
-    else
-    {
-        *cost *= plyr->player_pos->data.mpdata.value;
-    }
-    return CONTINUE_STEP;
-}
-
-HandlerResult handle_wall(Player* plyr, int* ignore_val)
-{
-    return ABORT_MOVE;
-}
-
-//forward declaration
 static const CellAction actions[];
 
 HandlerResult check_landed_cell(Player* plyr)
@@ -1166,6 +1043,37 @@ Cell* pick_stair_heuristic(Cell* dest1, Cell* dest2, Cell* flag) {
     
     // tie → random
     return (rand() % 2) ? dest1 : dest2;
+}
+
+/* ========================== CELL HANDLERS ========================== */
+/* 
+    Handle player interactions with specific cell types. 
+*/
+
+void player_to_bawana(Player* plyr);
+
+HandlerResult handle_normal_consumable(Player* plyr, int* cost)
+{
+    *cost -= plyr->player_pos->data.mpdata.value;
+    return CONTINUE_STEP;
+}
+
+HandlerResult handle_normal_bonus(Player* plyr, int* cost)
+{
+    if(plyr->player_pos->data.mpdata.factor == '+')
+    {
+        *cost += plyr->player_pos->data.mpdata.value;
+    }
+    else
+    {
+        *cost *= plyr->player_pos->data.mpdata.value;
+    }
+    return CONTINUE_STEP;
+}
+
+HandlerResult handle_wall(Player* plyr, int* ignore_val)
+{
+    return ABORT_MOVE;
 }
 
 HandlerResult handle_stair(Player* plyr, StairDirection wrong_dir, Cell* stair0_dest_cell, Cell* stair1_dest_cell)
@@ -1319,6 +1227,98 @@ static const CellAction actions[] = {
     { CELL_NONE,                handle_no_special_effect_cell   },
 };
 
+/* ======================== PLAYER MOVEMENT FUNCTIONS ======================== */
+   
+/*
+    Handle player movement logic, updating player position,
+    and validating moves based on player states and environment constraints.
+*/
+
+Bounds move_one_cell(Player* plyr, PlayerDirection dir)
+{
+    int floor = plyr->player_pos->floor;
+    int width = plyr->player_pos->width;
+    int length = plyr->player_pos->length;
+
+    switch(dir){
+        case NORTH:
+            width--; //move up
+            break;
+        case SOUTH:
+            width++; //move down
+            break;
+        case EAST:
+            length++; //move left
+            break;
+        case WEST:
+            length--; //move right
+            break;
+    }
+
+    if(width < 0)
+    {
+        return NORTH_BOUND;   
+    }
+    else if(width >= MAX_WIDTH)
+    {
+        return SOUTH_BOUND;
+    }
+    else if(length < 0)
+    {
+        return WEST_BOUND;
+    }
+    else if(length >= MAX_LENGTH)
+    {
+        return EAST_BOUND;
+    }
+    
+    plyr->player_pos = &cells[floor][width][length];
+    return NO_BOUNDS;
+}
+
+void player_to_bawana(Player* plyr)
+{
+    if(check_cell_types(plyr->player_pos, BAWANA_BONUS))
+    {
+        plyr->player_state = ACTIVE;
+        plyr->mp_score = (rand() % 91) + 10;
+        plyr->player_pos = bawana_entrance_cell_ptr;
+        plyr->direction = NORTH;
+        print_output(TO_BAWANA_BONUS, plyr, 0, NULL, NULL);
+    }
+    else if(check_cell_types(plyr->player_pos, BAWANA_FOOD_POISONING))
+    {
+        print_output(TO_BAWANA_FP, plyr, 0, NULL, NULL);
+        plyr->player_state = FOOD_POISONED;
+        plyr->effect_turns = 3;
+    }   
+    else if(check_cell_types(plyr->player_pos, BAWANA_DISORIENT))
+    {
+        print_output(TO_BAWANA_DISORIENT, plyr, 0, NULL, NULL);
+        plyr->player_state = DISORIENTED;
+        plyr->mp_score = 50;
+        plyr->player_pos = bawana_entrance_cell_ptr;
+        plyr->direction = NORTH;
+        plyr->effect_turns = 4;
+    }
+    else if(check_cell_types(plyr->player_pos, BAWANA_TRIGGER))
+    {
+        print_output(TO_BAWANA_TRIGGER, plyr, 0, NULL, NULL);
+        plyr->player_state = TRIGGERED;
+        plyr->mp_score = 50;
+        plyr->player_pos = bawana_entrance_cell_ptr;
+        plyr->direction = NORTH;
+    }
+    else if(check_cell_types(plyr->player_pos, BAWANA_HAPPY))
+    {
+        print_output(TO_BAWANA_HAPPY, plyr, 0, NULL, NULL);
+        plyr->player_state = ACTIVE;    
+        plyr->mp_score = 200;
+        plyr->player_pos = bawana_entrance_cell_ptr;
+        plyr->direction = NORTH;
+    }
+}
+
 void capture_player(int current_player_index)
 {
     for(int p_index = 0; p_index < NUM_OF_PLAYERS; p_index++)
@@ -1329,17 +1329,6 @@ void capture_player(int current_player_index)
         {
             players[p_index].player_pos = players[p_index].starting_cell;
         }
-    }
-}
-
-PlayerDirection generate_random_player_direction()
-{
-    switch(rand() % 4)
-    {
-        case 0: return NORTH;
-        case 1: return SOUTH;
-        case 2: return EAST;
-        case 3: return WEST;
     }
 }
 
@@ -1495,6 +1484,12 @@ void handle_player_state_movement(Player* plyr, int player_index)
     }
     reset_event_list();
 }
+
+/* ======================== GAMEPLAY FUNCTIONS ======================== */
+   
+/*
+    Functions that control overall game flow and manage stair direction logic.
+*/
 
 StairDirection get_random_stair_direction()
 {
