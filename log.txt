@@ -1,0 +1,1 @@
+[WARN] Range error on start floor (file walls.txt, line 1). Line skipped.

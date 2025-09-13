@@ -35,7 +35,8 @@ FILE* log_fp;
 
 bool check_cell_types(Cell *c, int types) 
 {
-    return (c->celltypes & types) != 0;     //true if have
+    //return true if the cell have the cell type (not the case for CELL_NONE)
+    return (c->celltypes & types) != 0;     
 }
 
 void add_cell_type(Cell *c, int type)
@@ -47,6 +48,12 @@ void set_cell_type(Cell* c, int type)
 {
     c->celltypes = type;
 }
+
+void remove_cell_type(Cell* c, int type)
+{
+    c->celltypes &= ~type;
+}
+
 /* ======================== GAME INIT FUNCTIONS ======================== */
 
 /*
@@ -245,18 +252,18 @@ void set_normal_cells()
     Validate and load game data.
 */
 
-char* get_current_datetime(char* buffer) 
+char* get_current_datetime() 
 {
     time_t rawtime;
     time(&rawtime);
     
     struct tm* timeinfo = localtime(&rawtime);
  
-    if (buffer == NULL) return "[GetCurrentDateTimeFailed]"; 
+    if (time_buffer == NULL) return "[GetCurrentDateTimeFailed]"; 
 
-    strftime(buffer, 20, "%Y-%m-%d %H:%M:%S", timeinfo);
+    strftime(time_buffer, 20, "%Y-%m-%d %H:%M:%S", timeinfo);
     
-    return buffer;
+    return time_buffer;
 }
 
 void print_file_error(FileErrors error, char filename[])
@@ -264,15 +271,15 @@ void print_file_error(FileErrors error, char filename[])
     switch(error)
     {
         case FILE_NOT_OPEN:
-            fprintf(log_fp, "[ERROR] Cannot open (file: %s) %s\n", filename, get_current_datetime(time_buffer));
+            fprintf(log_fp, "[ERROR] Cannot open (file: %s) %s\n", filename, get_current_datetime());
             printf("Game crashed! Check log.txt\n");
             break;
         case EMPTY_FILE:
             printf("Game crashed! Check log.txt\n");
-            fprintf(log_fp, "[ERROR] File is empty (file: %s). No data to process. %s\n", filename, get_current_datetime(time_buffer));
+            fprintf(log_fp, "[ERROR] File is empty (file: %s). No data to process. %s\n", filename, get_current_datetime());
             break;
         default:
-            fprintf(log_fp, "[WARN] Unhandled file error detected. Execution may be unstable.\n");
+            fprintf(log_fp, "[WARN] Unhandled file error detected. Execution may be unstable. %s\n", get_current_datetime());
     }
 }
 
@@ -412,6 +419,7 @@ void load_flag(int* digits, char filename[], int num_lines)
     if(cells[floor][width_num][length_num].is_valid && !check_cell_types(&cells[floor][width_num][length_num], CELL_STARTING_AREA | CELL_BAWANA) )
     {
         cell_flag = &cells[floor][width_num][length_num];
+        remove_cell_type(cell_flag, CELL_NONE);
         add_cell_type(cell_flag, CELL_FLAG);
     }
 }
@@ -461,17 +469,19 @@ void load_poles(int* digits, char filename[], int num_lines)
     }
     else
     {
-        set_cell_type(&cells[1][width_num][length_num], CELL_POLE_ENTER);
+        remove_cell_type(&cells[1][width_num][length_num], CELL_NONE);
+        add_cell_type(&cells[1][width_num][length_num], CELL_POLE_ENTER);
         cells[1][width_num][length_num].data.access_pole = true;
         cells[1][width_num][length_num].data.pole_data.dest_cell = &cells[exit_floor][width_num][length_num];
     }
 
-    set_cell_type(&cells[enter_floor][width_num][length_num], CELL_POLE_ENTER);
+    remove_cell_type(&cells[enter_floor][width_num][length_num], CELL_NONE);
+    add_cell_type(&cells[enter_floor][width_num][length_num], CELL_POLE_ENTER);
     cells[enter_floor][width_num][length_num].data.access_pole = true;
     cells[enter_floor][width_num][length_num].data.pole_data.dest_cell = &cells[exit_floor][width_num][length_num];
 
-    set_cell_type(&cells[exit_floor][width_num][length_num], CELL_POLE_EXIT);
-
+    remove_cell_type(&cells[exit_floor][width_num][length_num], CELL_NONE);
+    add_cell_type(&cells[exit_floor][width_num][length_num], CELL_POLE_EXIT);
 }
 
 void load_stairs(int* digits, char filename[], int num_lines)
@@ -512,7 +522,7 @@ void load_stairs(int* digits, char filename[], int num_lines)
 
     Cell* stair_start_cell = &cells[start_floor][start_width_num][start_length_num];
     Cell* stair_end_cell = &cells[end_floor][end_width_num][end_length_num];
-    //Handle conditions, return if a condition is false, if get to the last statement add the stair
+    
     if(start_floor >= end_floor)
     {
         return;
@@ -546,8 +556,11 @@ void load_stairs(int* digits, char filename[], int num_lines)
         stair_start_cell->data.stairs[stair_start_cell->data.stair_count++] = new_stair;
         stair_end_cell->data.stairs[stair_end_cell->data.stair_count++] = new_stair;
 
-        set_cell_type(stair_start_cell, CELL_STAIR_START);
-        set_cell_type(stair_end_cell, CELL_STAIR_END);
+        remove_cell_type(stair_start_cell, CELL_NONE);
+        add_cell_type(stair_start_cell, CELL_STAIR_START);
+
+        remove_cell_type(stair_end_cell, CELL_NONE);
+        add_cell_type(stair_end_cell, CELL_STAIR_END);
 
         if(stair_start_cell->floor == 0 && stair_end_cell->floor == 2)
         {
@@ -563,7 +576,7 @@ void load_stairs(int* digits, char filename[], int num_lines)
 int check_wall_init_conditions(Cell* cell)
 {
     if(cell->is_valid == true && 
-        !check_cell_types(cell, CELL_FLAG | CELL_STAIR_START | CELL_STAIR_END | CELL_POLE_ENTER | CELL_POLE_EXIT | CELL_BAWANA | BAWANA_ENTRANCE))
+        !check_cell_types(cell, CELL_FLAG | CELL_STAIR_START | CELL_STAIR_END | CELL_POLE_ENTER | CELL_POLE_EXIT | CELL_BAWANA | BAWANA_ENTRANCE | CELL_STARTING_AREA))
     {
         return 1;
     }
@@ -800,6 +813,12 @@ void read_data()
     }
 }
 
+/* ======================== UTILITY FUNCTIONS ======================== */
+
+/*
+    Functions that support player movement functions.
+*/
+
 char* get_player_dir_string(PlayerDirection dir)
 {
     switch (dir)
@@ -879,21 +898,13 @@ void print_output(MoveResult result, Player* p, int path_cost, Cell* trigger_cel
     }
 }
 
-/* ======================== PLAYER MOVEMENT FUNCTIONS ======================== */
+/* ======================== EVENT HANDLING FUNCTIONS ======================== */
    
 /*
-    Handle player movement logic, including processing input, updating player position,
-    and validating moves based on game rules and environment constraints.
+    Manages the in-game event log for player actions. Each event that occurs during
+    a player's move is stored in a non-circular queue, following LIFO policy 
+    to provide a step-by-step trace of gameplay actions if in a complete move.
 */
-  
-typedef enum
-{
-  NO_BOUNDS,
-  NORTH_BOUND,
-  SOUTH_BOUND,
-  EAST_BOUND,
-  WEST_BOUND
-} Bounds;
 
 bool event_list_full()
 {
@@ -945,6 +956,36 @@ void reset_event_list()
 {
     front = rear = -1;
 }
+
+/* ======================== PLAYER MOVEMENT FUNCTIONS ======================== */
+   
+/*
+    Handle player movement logic, updating player position,
+    and validating moves based on player states and environment constraints.
+*/
+  
+typedef enum
+{
+  NO_BOUNDS,
+  NORTH_BOUND,
+  SOUTH_BOUND,
+  EAST_BOUND,
+  WEST_BOUND
+} Bounds;
+
+typedef enum {
+    CONTINUE_STEP,
+    ABORT_MOVE,
+    WIN_GAME
+} HandlerResult;
+
+typedef HandlerResult (*CellHandler)(Player*, int*);
+
+typedef struct
+{
+    int flag;
+    CellHandler handler;
+} CellAction;
 
 int movement_dice()
 {
@@ -1012,12 +1053,6 @@ Bounds move_one_cell(Player* plyr, PlayerDirection dir)
     return NO_BOUNDS;
 }
 
-typedef enum {
-    CONTINUE_STEP,
-    ABORT_MOVE,
-    WIN_GAME
-} HandlerResult;
-
 void player_to_bawana(Player* plyr)
 {
     if(check_cell_types(plyr->player_pos, BAWANA_BONUS))
@@ -1061,14 +1096,6 @@ void player_to_bawana(Player* plyr)
     }
 }
 
-typedef HandlerResult (*CellHandler)(Player*, int*);
-typedef struct
-{
-    int flag;
-    CellHandler handler;
-} CellAction;
-static const CellAction actions[];
-
 HandlerResult handle_normal_consumable(Player* plyr, int* cost)
 {
     *cost -= plyr->player_pos->data.mpdata.value;
@@ -1092,6 +1119,9 @@ HandlerResult handle_wall(Player* plyr, int* ignore_val)
 {
     return ABORT_MOVE;
 }
+
+//forward declaration
+static const CellAction actions[];
 
 HandlerResult check_landed_cell(Player* plyr)
 {

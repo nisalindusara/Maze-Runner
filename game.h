@@ -30,13 +30,13 @@ typedef enum
     CELL_STARTING_AREA = 1 << 7,
     CELL_FLAG          = 1 << 8,
     CELL_BAWANA       = 1 << 9,
-
     // Bawana subtypes start here
     BAWANA_BONUS           = 1 << 10,
     BAWANA_FOOD_POISONING  = 1 << 11,
     BAWANA_TRIGGER         = 1 << 12,
     BAWANA_HAPPY           = 1 << 13,
     BAWANA_DISORIENT       = 1 << 14,
+    // not a Bawana subtype 
     BAWANA_ENTRANCE        = 1 << 15
 } CellType;
 
