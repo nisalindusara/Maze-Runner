@@ -29,15 +29,15 @@ typedef enum
     CELL_POLE_EXIT     = 1 << 6,
     CELL_STARTING_AREA = 1 << 7,
     CELL_FLAG          = 1 << 8,
-    CELL_BHAWANA       = 1 << 9,
+    CELL_BAWANA       = 1 << 9,
 
-    // Bhawana subtypes start here
-    BHAWANA_BONUS           = 1 << 10,
-    BHAWANA_FOOD_POISONING  = 1 << 11,
-    BHAWANA_TRIGGER         = 1 << 12,
-    BHAWANA_HAPPY           = 1 << 13,
-    BHAWANA_DISORIENT       = 1 << 14,
-    BHAWANA_ENTRANCE        = 1 << 15
+    // Bawana subtypes start here
+    BAWANA_BONUS           = 1 << 10,
+    BAWANA_FOOD_POISONING  = 1 << 11,
+    BAWANA_TRIGGER         = 1 << 12,
+    BAWANA_HAPPY           = 1 << 13,
+    BAWANA_DISORIENT       = 1 << 14,
+    BAWANA_ENTRANCE        = 1 << 15
 } CellType;
 
 typedef enum 
@@ -166,7 +166,13 @@ typedef enum
     START_MOVE_WITH_DIRECTION,
     TAKE_POLE,
     TAKE_STAIR,
-    PLAYER_WIN
+    PLAYER_WIN,
+    TO_BAWANA,
+    TO_BAWANA_BONUS,
+    TO_BAWANA_FP,
+    TO_BAWANA_DISORIENT,
+    TO_BAWANA_TRIGGER,
+    TO_BAWANA_HAPPY
 } MoveResult;
 
 typedef struct
@@ -181,5 +187,7 @@ typedef struct {
     int start_floor, start_w, start_l;   // starting cell
     int first_floor, first_w, first_l;   // first cell after spawn
 } PlayerInit;
+
+void play_game();
 
 #endif
