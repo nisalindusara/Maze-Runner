@@ -14,15 +14,17 @@ void play_game(void);
 #include <string.h>
 #include <time.h>
 
+/* -------------------- GAME CONFIG -------------------- */
 #define NUM_OF_PLAYERS 3
 #define NUM_OF_FLOORS 3
 #define MAX_WIDTH 10
 #define MAX_LENGTH 25
-
+#define MAX_SIZE 750
 #define GAME_SETTING 5
 #define MAX_LINE_LEN 256
 #define MAX_EVENTS_PER_EACH_MOVE 20
 
+/* -------------------- ERROR ENUMS -------------------- */
 typedef enum 
 {
     INVALID_NUM_DIGITS, 
@@ -62,6 +64,7 @@ typedef enum
     DIAGONAL_WALL
 } LogicError;
 
+/* -------------------- CELL TYPES -------------------- */
 typedef enum 
 {
     CELL_NONE          = 0,
@@ -85,6 +88,50 @@ typedef enum
     BAWANA_ENTRANCE        = 1 << 15
 } CellType;
 
+/* -------------------- StAIR Data -------------------- */
+typedef enum {UPDOWN, UP, DOWN} StairDirection;
+
+/* -------------------- CELL Data -------------------- */
+typedef struct Cell Cell; //forward declaration of Cell
+typedef struct
+{
+    char factor;    // '+', '-', '*'
+    short value;
+} MovementPointData;
+typedef struct
+{
+    Cell* dest_cell;
+} PoleData;
+
+typedef struct
+{
+    Cell* start_cell;
+    Cell* end_cell;
+    StairDirection direction;
+} Stair;
+
+typedef struct 
+{
+    Stair* stairs[2];
+    PoleData pole_data;
+    MovementPointData mpdata;
+    short stair_count;
+    bool access_pole;
+    bool has_movementpoint;
+} CellData;
+typedef struct Cell
+{
+    int floor;
+    int width;
+    int length;
+    int celltypes;
+    bool is_valid;
+    CellData data;
+}Cell;
+
+extern Cell cells[NUM_OF_FLOORS][MAX_WIDTH][MAX_LENGTH];
+
+/* -------------------- PLAYER Data -------------------- */
 typedef enum 
 {   
     NORTH, 
@@ -102,68 +149,31 @@ typedef enum
     TRIGGERED
 } PlayerState;
 
-typedef enum {UPDOWN, UP, DOWN} StairDirection;
-
-typedef enum {START_FLOOR_LARGE} ConditionErrors;
-
-typedef struct Cell Cell; //forward declaration of Cell
-typedef struct
-{
-    char factor;    // '+', '-', '*'
-    int value;
-} MovementPointData;
-typedef struct
-{
-    Cell* dest_cell;
-} PoleData;
-
-typedef struct
-{
-    Cell* start_cell;
-    Cell* end_cell;
-    StairDirection direction;
-} Stair;
-
-typedef struct 
-{
-    bool access_pole;
-    PoleData pole_data;
-
-    short stair_count;
-    Stair* stairs[2];
-
-    bool has_movementpoint;
-    MovementPointData mpdata;
-} CellData;
-typedef struct Cell
-{
-    int floor;
-    int width;
-    int length;
-    bool is_valid;
-    int celltypes;
-    CellData data;
-}Cell;
-
 typedef struct
 {
     char name;
     PlayerDirection direction;
-    Cell* first_cell;   //cell in maze 
-    Cell* starting_cell; //cell in starting area
+    PlayerDirection init_dir;
     PlayerState player_state;
     int throw_count;
     int move_value;
-    Cell* player_pos;
     int mp_score;
     int effect_turns;
-    PlayerDirection init_dir;
+    Cell* first_cell;   //cell in maze 
+    Cell* starting_cell; //cell in starting area
+    Cell* player_pos;
 } Player;
 
-extern int game_round;
-extern Player players[NUM_OF_PLAYERS];
-extern Cell cells[NUM_OF_FLOORS][MAX_WIDTH][MAX_LENGTH];
+typedef struct {
+    PlayerDirection direction;
+    int start_floor, start_w, start_l;   // starting cell
+    int first_floor, first_w, first_l;   // first cell after spawn
+    char name;
+} PlayerInit;
 
+extern Player players[NUM_OF_PLAYERS];
+
+/* -------------------- PLAYER MOVE Data -------------------- */
 typedef struct 
 {
     Cell* trigger_cell;
@@ -195,20 +205,14 @@ typedef struct
     EventData data;
 } MoveEvent;
 
-typedef struct {
-    char name;
-    PlayerDirection direction;
-    int start_floor, start_w, start_l;   // starting cell
-    int first_floor, first_w, first_l;   // first cell after spawn
-} PlayerInit;
 
 typedef enum
 {
-  NO_BOUNDS,
-  NORTH_BOUND,
-  SOUTH_BOUND,
-  EAST_BOUND,
-  WEST_BOUND
+    NO_BOUNDS,
+    NORTH_BOUND,
+    SOUTH_BOUND,
+    EAST_BOUND,
+    WEST_BOUND
 } Bounds;
 
 typedef enum {
@@ -223,7 +227,7 @@ typedef HandlerResult (*CellHandler)(Player*, int*);
 typedef struct
 {
     int flag;
-    CellHandler handler;
+    CellHandler handler;    //order matters
 } CellAction;
 
 typedef enum {
@@ -231,15 +235,28 @@ typedef enum {
     CHECK_END_CELL
 } StairCheckType;
 
-//dynamic array of all stairs
-Stair** stairs_array;           
-
+/* -------------------- GLOBAL VARIABLES -------------------- */
+extern int game_round;
 Cell* cell_flag;
+Stair** stairs_array;     //dynamic array of all stairs      
 Cell* bawana_entrance_cell_ptr;
-
 char* time_buffer;
-
 FILE* log_fp;
+
+/* -------------------- BFS QUEUE -------------------- */
+Cell* queue[MAX_SIZE];
+int frontq, rearq;
+bool visited[NUM_OF_FLOORS][MAX_WIDTH][MAX_LENGTH];
+
+typedef struct 
+{
+    int floor;
+    int width;
+    int length;
+} PlayerStart;
+
+PlayerStart player_starts[NUM_OF_PLAYERS]; // populate with each player's starting cell
+bool check_flag_reachability_for_all_players(Cell* flag_cell);
 
 #endif  //GAME_INTERNAL
 

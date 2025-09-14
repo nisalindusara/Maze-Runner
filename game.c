@@ -402,102 +402,46 @@ void log_logic_error(LogicError error, char filename[], int line_number)
     switch(error)
     {
         case INVALID_FLAG_POSITION:
-            fprintf(log_fp, "[WARN] %-25s | %-40s | %s | %s\n",
-                    "INVALID_FLAG_POSITION",
-                    "FLAG position is invalid. Generate new flag",
-                    file_loc,
-                    get_current_datetime());
+            fprintf(log_fp, "[WARN] %-25s | %-40s | %s | %s\n", "INVALID_FLAG_POSITION", "FLAG position is invalid. Generate new flag", file_loc, get_current_datetime());
             break;
         case INVALID_POLE_DEFINITION:
-            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
-                    "INVALID_POLE_DEFINITION",
-                    "Pole exit must be lower than entrance",
-                    file_loc,
-                    get_current_datetime());
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n", "INVALID_POLE_DEFINITION", "Pole exit must be lower than entrance", file_loc, get_current_datetime());
             break;
-        case POLE_ENTRANCE_INVALID:
-            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
-                    "POLE_ENTRANCE_INVALID",
-                    "Pole entrance is invalid",
-                    file_loc,
-                    get_current_datetime());
+        case POLE_ENTRANCE_INVALID: 
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n","POLE_ENTRANCE_INVALID", "Pole entrance is invalid", file_loc, get_current_datetime());
             break;
         case POLE_EXIT_INVALID:
-            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
-                    "POLE_EXIT_INVALID",
-                    "Pole exit is invalid",
-                    file_loc,
-                    get_current_datetime());
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n", "POLE_EXIT_INVALID", "Pole exit is invalid", file_loc, get_current_datetime());
             break;
         case POLE_INTERCEPTION_INVALID:
-            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
-                    "POLE_INTERCEPTION_INVALID",
-                    "Pole intercepts another object",
-                    file_loc,
-                    get_current_datetime());
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n", "POLE_INTERCEPTION_INVALID", "Pole intercepts another object", file_loc, get_current_datetime());
             break;
         case INVALID_STAIR_DEFINITION:
-            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
-                    "INVALID_STAIR_DEFINITION",
-                    "Stair definition is inconsistent",
-                    file_loc,
-                    get_current_datetime());
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n", "INVALID_STAIR_DEFINITION", "Stair definition is inconsistent", file_loc, get_current_datetime());
             break;
         case STAIR_START_INVALID:
-            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
-                    "STAIR_START_INVALID",
-                    "Stair start position is invalid",
-                    file_loc,
-                    get_current_datetime());
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n", "STAIR_START_INVALID", "Stair start position is invalid", file_loc,get_current_datetime());
             break;
         case STAIR_END_INVALID:
-            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
-                    "STAIR_END_INVALID",
-                    "Stair end position is invalid",
-                    file_loc,
-                    get_current_datetime());
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n", "STAIR_END_INVALID","Stair end position is invalid",file_loc,get_current_datetime());
             break;
         case STAIR_START_FULL:
-            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
-                    "STAIR_START_FULL",
-                    "Stair start cell already occupied",
-                    file_loc,
-                    get_current_datetime());
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n","STAIR_START_FULL","Stair start cell already occupied",file_loc,get_current_datetime());
             break;
         case STAIR_END_FULL:
-            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
-                    "STAIR_END_FULL",
-                    "Stair end cell already occupied",
-                    file_loc,
-                    get_current_datetime());
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n","STAIR_END_FULL","Stair end cell already occupied",file_loc,get_current_datetime());
             break;
         case INVALID_WALL_POSITION:
-            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
-                    "INVALID_WALL_POSITION",
-                    "Wall placed in invalid position",
-                    file_loc,
-                    get_current_datetime());
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n","INVALID_WALL_POSITION","Wall placed in invalid position",file_loc,get_current_datetime());
             break;
         case SKIP_WALL_CELL:
-            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
-                    "SKIP_WALL_CELL",
-                    "Skipped cell due to wall placement",
-                    file_loc,
-                    get_current_datetime());
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n","SKIP_WALL_CELL","Skipped cell due to wall placement",file_loc,get_current_datetime());
             break;
         case DIAGONAL_WALL:
-            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
-                    "DIAGONAL_WALL",
-                    "Diagonal wall placement not allowed",
-                    file_loc,
-                    get_current_datetime());
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n","DIAGONAL_WALL","Diagonal wall placement not allowed",file_loc,get_current_datetime());
             break;
         default:
-            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
-                    "UNKNOWN_LOGIC_ERROR",
-                    "Unknown logic error",
-                    file_loc,
-                    get_current_datetime());
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n","UNKNOWN_LOGIC_ERROR","Unknown logic error",file_loc,get_current_datetime());
     }
 }
 
@@ -605,12 +549,16 @@ void load_flag_or_generate(int* digits, char filename[], int num_lines)
     {
         cell_flag = &cells[floor][width_num][length_num];
     }
-    else
+    else 
+    {
+        log_logic_error(INVALID_FLAG_POSITION, filename, num_lines);
+        cell_flag = generate_custom_flag();
+    }
+
+    while(!check_flag_reachability_for_all_players(cell_flag))
     {
         cell_flag = generate_custom_flag();
-        log_logic_error(INVALID_FLAG_POSITION, filename, num_lines);
     }
-    remove_cell_type(cell_flag, CELL_NONE);
     add_cell_type(cell_flag, CELL_FLAG);
     flag_loaded = true;
 }
@@ -999,8 +947,6 @@ int parse_and_process_line(const char* line, char filename[], int num_lines)
 
 int validate_file(char filename[])
 {
-    
-    
     FILE* dataf = fopen(filename, "r");
     if(dataf == NULL)  
     {
@@ -1013,7 +959,6 @@ int validate_file(char filename[])
     if (ch == EOF) 
     {
         log_file_error(EMPTY_FILE, filename);
-        exit(1);
         return 0;
     }
 
@@ -1637,8 +1582,6 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
                     }
                     else    //PLACED_ON_BAWANA
                     {
-                        printf("===================PLAYER PLACED ON BAWANA=====================\n");
-                        exit(0);
                         print_event_list(plyr, path_cost);
                         player_to_bawana(plyr);
                         return;
@@ -1752,6 +1695,148 @@ void handle_player_state_movement(Player* plyr, int player_index)
     }
     reset_event_list();
 }
+
+/* ======================== FLAG REACHABILITY CHECK ======================== */
+
+/*
+    Performs BFS from the flag cell to determine if all players' starting
+    positions are reachable. Considers valid cells, walls, one-way poles,
+    and bidirectional stairs (ignores stairs starting in starting area cells).
+*/
+
+bool is_qfull() { return (rearq + 1) % MAX_SIZE == frontq; }
+bool is_qempty() { return frontq == -1; }
+
+void enqueue(Cell* cell) 
+{
+    if (is_qfull()) return;
+    if (is_qempty()) frontq = rearq = 0;
+    else rearq = (rearq + 1) % MAX_SIZE;
+    queue[rearq] = cell;
+}
+
+Cell* dequeue() 
+{
+    if (is_qempty()) return NULL;
+    Cell* cell = queue[frontq];
+    if (frontq == rearq) frontq = rearq = -1;
+    else frontq = (frontq + 1) % MAX_SIZE;
+    return cell;
+}
+
+bool in_bounds(int f, int w, int l) 
+{
+    return f >= 0 && f < NUM_OF_FLOORS &&
+           w >= 0 && w < MAX_WIDTH &&
+           l >= 0 && l < MAX_LENGTH;
+}
+
+bool check_flag_reachability_for_all_players(Cell* flag_cell) 
+{
+    frontq = rearq = -1;
+    memset(visited, 0, sizeof(visited));
+
+    enqueue(flag_cell);
+    visited[flag_cell->floor][flag_cell->width][flag_cell->length] = true;
+
+    // Track which players' starting cells have been reached
+    bool reached_players[NUM_OF_PLAYERS];
+    for (int i = 0; i < NUM_OF_PLAYERS; i++) reached_players[i] = false;
+
+    while (!is_qempty()) 
+    {
+        Cell* cell = dequeue();
+
+        // Check if this cell is any player's starting cell
+        for (int i = 0; i < NUM_OF_PLAYERS; i++) {
+            PlayerStart ps = player_starts[i];
+            if (!reached_players[i] &&
+                ps.floor == cell->floor &&
+                ps.width == cell->width &&
+                ps.length == cell->length) 
+            {
+                reached_players[i] = true;
+            }
+        }
+
+        // Check if all players reached
+        bool all_reached = true;
+        for (int i = 0; i < NUM_OF_PLAYERS; i++) 
+        {
+            if (!reached_players[i]) 
+            {
+                all_reached = false;
+                break;
+            }
+        }
+        if (all_reached) return true;
+
+        // --- 1. Normal moves ---
+        int df[4] = {0, 0, 0, 0};
+        int dw[4] = {-1, 1, 0, 0};
+        int dl[4] = {0, 0, -1, 1};
+
+        for (int d = 0; d < 4; d++) 
+        {
+            int nf = cell->floor + df[d];
+            int nw = cell->width + dw[d];
+            int nl = cell->length + dl[d];
+
+            if (!in_bounds(nf, nw, nl)) continue;
+            if (visited[nf][nw][nl]) continue;
+
+            Cell* neighbor = &cells[nf][nw][nl];
+            if (!neighbor->is_valid) continue;
+            if (neighbor->celltypes & CELL_WALL) continue;
+
+            enqueue(neighbor);
+            visited[nf][nw][nl] = true;
+        }
+
+        // --- 2. Stairs (bidirectional) ---
+        for (int i = 0; i < cell->data.stair_count; i++) 
+        {
+            Stair* stair = cell->data.stairs[i];
+                if (!stair) continue;
+
+            // Skip stairs that originate in a starting area cell
+            if (cell->celltypes & CELL_STARTING_AREA)
+                continue;
+
+            // Upward move
+            Cell* dest_up = stair->end_cell;
+            if (!visited[dest_up->floor][dest_up->width][dest_up->length]) 
+            {
+                enqueue(dest_up);
+                visited[dest_up->floor][dest_up->width][dest_up->length] = true;
+            }
+
+            // Downward move
+            Cell* dest_down = stair->start_cell;
+            if (!visited[dest_down->floor][dest_down->width][dest_down->length]) 
+            {
+                enqueue(dest_down);
+                visited[dest_down->floor][dest_down->width][dest_down->length] = true;
+            }
+        }
+
+
+        // --- 3. Poles (one-way only) ---
+        if (cell->celltypes & CELL_POLE_ENTER) 
+        {
+            Cell* dest = cell->data.pole_data.dest_cell;
+            if (dest && !visited[dest->floor][dest->width][dest->length]) 
+            {
+                enqueue(dest);
+                visited[dest->floor][dest->width][dest->length] = true;
+            }
+        }
+    }
+
+    // If BFS finishes and not all players reached
+    return false;
+}
+
 
 /* ======================== GAMEPLAY FUNCTIONS ======================== */
    
