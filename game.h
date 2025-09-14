@@ -61,7 +61,8 @@ typedef enum
     STAIR_END_FULL,
     INVALID_WALL_POSITION,
     SKIP_WALL_CELL,
-    DIAGONAL_WALL
+    DIAGONAL_WALL,
+    FLAG_REACH_CHECK
 } LogicError;
 
 /* -------------------- CELL TYPES -------------------- */

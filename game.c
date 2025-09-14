@@ -20,25 +20,20 @@ bool flag_loaded = false;
     and input handling.
 */
 
-bool check_cell_types(Cell *c, int types) 
+bool check_cell_types(const Cell const *c, const int types) 
 {
     //return true if the cell have the cell type (not the case for CELL_NONE)
     return (c->celltypes & types) != 0;     
 }
 
-void add_cell_type(Cell *c, int type)
+void add_cell_type(Cell *c, const int type)
 {
     c->celltypes |= type;
 }
 
-void set_cell_type(Cell* c, int type)
+void set_cell_type(Cell* const c, const int type)
 {
     c->celltypes = type;
-}
-
-void remove_cell_type(Cell* c, int type)
-{
-    c->celltypes &= ~type;
 }
 
 /* ======================== GAME INIT FUNCTIONS ======================== */
@@ -47,7 +42,7 @@ void remove_cell_type(Cell* c, int type)
     Initializes all players, all valid and invalid cells, and Bawana area.
 */
 
-void mark_cells(int floor, int start_w, int end_w, int start_l, int end_l, bool is_valid, CellType type) 
+void mark_cells(const int floor, const int start_w, const int end_w, const int start_l, const int end_l, const bool is_valid, const CellType type) 
 {
     for(int w = start_w; w <= end_w; w++)
         for(int l = start_l; l <= end_l; l++) {
@@ -254,10 +249,10 @@ char* get_current_datetime()
     return time_buffer;
 }
 
-void log_file_error(FileErrors error, char filename[])
+void log_file_error(const FileErrors error, const char filename[])
 {
     char file_loc[50];
-    snprintf(file_loc, sizeof(file_loc), "%-20s", filename);
+    snprintf(file_loc, sizeof(file_loc), "%-35s", filename);
 
     switch(error)
     {
@@ -278,10 +273,10 @@ void log_file_error(FileErrors error, char filename[])
     }
 }
 
-void log_file_error_line(FileErrors error, char filename[], int line_number)
+void log_file_error_line(const FileErrors error, const char filename[], const int line_number)
 {
     char file_loc[50];
-    snprintf(file_loc, sizeof(file_loc), "%-20s, line %-3d", filename, line_number);
+    snprintf(file_loc, sizeof(file_loc), "%-25s, line %-3d", filename, line_number);
 
     switch(error)
     {
@@ -315,10 +310,10 @@ void log_file_error_line(FileErrors error, char filename[], int line_number)
     }
 }
 
-void log_range_error(RangeError error, char filename[], int line_number)
+void log_range_error(const RangeError error, const char filename[], const int line_number)
 {
     char file_loc[50];
-    snprintf(file_loc, sizeof(file_loc), "%-20s, line %-3d", filename, line_number);
+    snprintf(file_loc, sizeof(file_loc), "%-25s, line %-3d", filename, line_number);
 
     switch(error)
     {
@@ -394,36 +389,36 @@ void log_range_error(RangeError error, char filename[], int line_number)
     }
 }
 
-void log_logic_error(LogicError error, char filename[], int line_number)
+void log_logic_error(const LogicError error, const char filename[], const int line_number)
 {
     char file_loc[50];
-    snprintf(file_loc, sizeof(file_loc), "%-20s, line %-3d", filename, line_number);
+    snprintf(file_loc, sizeof(file_loc), "%-25s, line %-3d", filename, line_number);
 
     switch(error)
     {
         case INVALID_FLAG_POSITION:
-            fprintf(log_fp, "[WARN] %-25s | %-40s | %s | %s\n", "INVALID_FLAG_POSITION", "FLAG position is invalid. Generate new flag", file_loc, get_current_datetime());
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n", "INVALID_FLAG_POSITION", "FLAG position is invalid. Generate new flag", file_loc, get_current_datetime());
             break;
         case INVALID_POLE_DEFINITION:
             fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n", "INVALID_POLE_DEFINITION", "Pole exit must be lower than entrance", file_loc, get_current_datetime());
             break;
         case POLE_ENTRANCE_INVALID: 
-            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n","POLE_ENTRANCE_INVALID", "Pole entrance is invalid", file_loc, get_current_datetime());
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n","POLE_ENTRANCE_INVALID", "Pole entrance is invalid", file_loc, get_current_datetime());
             break;
         case POLE_EXIT_INVALID:
-            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n", "POLE_EXIT_INVALID", "Pole exit is invalid", file_loc, get_current_datetime());
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n", "POLE_EXIT_INVALID", "Pole exit is invalid", file_loc, get_current_datetime());
             break;
         case POLE_INTERCEPTION_INVALID:
-            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n", "POLE_INTERCEPTION_INVALID", "Pole intercepts another object", file_loc, get_current_datetime());
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n", "POLE_INTERCEPTION_INVALID", "Pole intercepts another object", file_loc, get_current_datetime());
             break;
         case INVALID_STAIR_DEFINITION:
-            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n", "INVALID_STAIR_DEFINITION", "Stair definition is inconsistent", file_loc, get_current_datetime());
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n", "INVALID_STAIR_DEFINITION", "Stair definition is inconsistent", file_loc, get_current_datetime());
             break;
         case STAIR_START_INVALID:
-            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n", "STAIR_START_INVALID", "Stair start position is invalid", file_loc,get_current_datetime());
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n", "STAIR_START_INVALID", "Stair start position is invalid", file_loc,get_current_datetime());
             break;
         case STAIR_END_INVALID:
-            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n", "STAIR_END_INVALID","Stair end position is invalid",file_loc,get_current_datetime());
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n", "STAIR_END_INVALID","Stair end position is invalid",file_loc,get_current_datetime());
             break;
         case STAIR_START_FULL:
             fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n","STAIR_START_FULL","Stair start cell already occupied",file_loc,get_current_datetime());
@@ -432,13 +427,16 @@ void log_logic_error(LogicError error, char filename[], int line_number)
             fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n","STAIR_END_FULL","Stair end cell already occupied",file_loc,get_current_datetime());
             break;
         case INVALID_WALL_POSITION:
-            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n","INVALID_WALL_POSITION","Wall placed in invalid position",file_loc,get_current_datetime());
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n","INVALID_WALL_POSITION","Wall placed in invalid position",file_loc,get_current_datetime());
             break;
         case SKIP_WALL_CELL:
             fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n","SKIP_WALL_CELL","Skipped cell due to wall placement",file_loc,get_current_datetime());
             break;
         case DIAGONAL_WALL:
-            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n","DIAGONAL_WALL","Diagonal wall placement not allowed",file_loc,get_current_datetime());
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n","DIAGONAL_WALL","Diagonal wall placement not allowed",file_loc,get_current_datetime());
+            break;
+        case FLAG_REACH_CHECK:
+            fprintf(log_fp, "[INFO ] %-25s | %-40s | %57s\n", "FLAG_REACH_CHECK", "Flag is reachable", get_current_datetime());
             break;
         default:
             fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n","UNKNOWN_LOGIC_ERROR","Unknown logic error",file_loc,get_current_datetime());
@@ -517,14 +515,13 @@ Cell* generate_custom_flag() {
 
         // Check validity and not starting area / bawana
         if (c->is_valid && !check_cell_types(c, CELL_STARTING_AREA | CELL_BAWANA | BAWANA_ENTRANCE)) {
-            remove_cell_type(c, CELL_NONE);
             add_cell_type(c, CELL_FLAG);
             return c;  // return the new valid flag cell
         }
     }
 }
 
-void load_flag_or_generate(int* digits, char filename[], int num_lines)
+void load_flag_or_generate(const int* const digits, const char filename[], const int num_lines)
 {
     int floor = digits[0];
     int width_num = digits[1];
@@ -559,11 +556,12 @@ void load_flag_or_generate(int* digits, char filename[], int num_lines)
     {
         cell_flag = generate_custom_flag();
     }
+    log_logic_error(FLAG_REACH_CHECK, filename, num_lines);
     add_cell_type(cell_flag, CELL_FLAG);
     flag_loaded = true;
 }
 
-void load_poles(int* digits, char filename[], int num_lines)
+void load_poles(const int* const digits, const char filename[], const int num_lines)
 {
     int exit_floor = digits[0], enter_floor = digits[1];
     int width_num = digits[2], length_num = digits[3];
@@ -612,22 +610,19 @@ void load_poles(int* digits, char filename[], int num_lines)
     }
     else
     {
-        remove_cell_type(&cells[1][width_num][length_num], CELL_NONE);
         add_cell_type(&cells[1][width_num][length_num], CELL_POLE_ENTER);
         cells[1][width_num][length_num].data.access_pole = true;
         cells[1][width_num][length_num].data.pole_data.dest_cell = &cells[exit_floor][width_num][length_num];
     }
 
-    remove_cell_type(&cells[enter_floor][width_num][length_num], CELL_NONE);
     add_cell_type(&cells[enter_floor][width_num][length_num], CELL_POLE_ENTER);
     cells[enter_floor][width_num][length_num].data.access_pole = true;
     cells[enter_floor][width_num][length_num].data.pole_data.dest_cell = &cells[exit_floor][width_num][length_num];
 
-    remove_cell_type(&cells[exit_floor][width_num][length_num], CELL_NONE);
     add_cell_type(&cells[exit_floor][width_num][length_num], CELL_POLE_EXIT);
 }
 
-void load_stairs(int* digits, char filename[], int num_lines)
+void load_stairs(const int* digits, const char filename[], const int num_lines)
 {
     int start_floor = digits[0], start_width_num = digits[1], start_length_num = digits[2];
     int end_floor = digits[3], end_width_num = digits[4], end_length_num = digits[5];
@@ -702,10 +697,8 @@ void load_stairs(int* digits, char filename[], int num_lines)
         stair_start_cell->data.stairs[(stair_start_cell->data.stair_count)++] = new_stair;
         stair_end_cell->data.stairs[(stair_end_cell->data.stair_count)++] = new_stair;
 
-        remove_cell_type(stair_start_cell, CELL_NONE);
         add_cell_type(stair_start_cell, CELL_STAIR_START);
 
-        remove_cell_type(stair_end_cell, CELL_NONE);
         add_cell_type(stair_end_cell, CELL_STAIR_END);
 
         if(stair_start_cell->floor == 0 && stair_end_cell->floor == 2)
@@ -733,20 +726,17 @@ void load_stairs(int* digits, char filename[], int num_lines)
     }
 }
 
-int check_wall_init_conditions(Cell* cell)
+int check_wall_init_conditions(const Cell* cell)
 {
     if(cell->is_valid == true && 
         !check_cell_types(cell, CELL_FLAG | CELL_STAIR_START | CELL_STAIR_END | CELL_POLE_ENTER | CELL_POLE_EXIT | CELL_BAWANA | BAWANA_ENTRANCE | CELL_STARTING_AREA))
     {
         return 1;
     }
-    else
-    {
-        return 0;
-    }
+    else return 0;
 }
 
-void load_walls(int* digits, char filename[], int num_lines)
+void load_walls(const int* digits,const char filename[], const int num_lines)
 {
     int floor = digits[0], start_width_num = digits[1], start_length_num = digits[2];
     int end_width_num = digits[3], end_length_num = digits[4];
@@ -883,7 +873,7 @@ void check_digits(int* digits, int count, char filename[], int num_lines)
             load_poles(digits, filename, num_lines);
             break;
         case 3:
-            if(!flag_loaded) load_flag_or_generate(digits, filename, num_lines);
+            if(!flag_loaded) load_flag_or_generate(digits, filename, num_lines); return;
         default:
             log_file_error_line(INVALID_NUM_DIGITS, filename, num_lines);
     }

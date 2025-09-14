@@ -1,4 +1,5 @@
-[ERROR] EMPTY_FILE                | File is empty, no data to process        | poles.txt            | 2025-09-14 22:25:40
-[ERROR] INVALID_STAIR_DEFINITION  | Stair definition is inconsistent         | stairs.txt          , line 1   | 2025-09-14 22:25:40
-[ERROR] EMPTY_FILE                | File is empty, no data to process        | walls.txt            | 2025-09-14 22:25:40
-[WARN ] INVALID_NUM_DIGITS        | Invalid number of digits, line skipped   | flag.txt            , line 1   | 2025-09-14 22:25:40
+[ERROR] EMPTY_FILE                | File is empty, no data to process        | seed.txt                            | 2025-09-14 23:20:18
+[ERROR] EMPTY_FILE                | File is empty, no data to process        | poles.txt                           | 2025-09-14 23:20:18
+[WARN ] INVALID_STAIR_DEFINITION  | Stair definition is inconsistent         | stairs.txt               , line 1   | 2025-09-14 23:20:18
+[ERROR] EMPTY_FILE                | File is empty, no data to process        | walls.txt                           | 2025-09-14 23:20:18
+[INFO ] FLAG_REACH_CHECK          | Flag is reachable                        |                                       2025-09-14 23:20:18
