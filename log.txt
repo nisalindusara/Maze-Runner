@@ -1,2 +1,14 @@
-[ERROR] File is empty (file: seed.txt). No data to process. 2025-09-13 21:40:29
-[WARN] Range error on start floor (file walls.txt, line 1). Line skipped.
+[WARN ] NO_DIGITS                 | No digits found, line skipped            | poles.txt           , line 2   | 2025-09-14 17:46:52
+[WARN ] STAIR_START_FULL          | Stair start cell already occupied        | stairs.txt          , line 10  | 2025-09-14 17:46:52
+[WARN ] STAIR_START_FULL          | Stair start cell already occupied        | stairs.txt          , line 11  | 2025-09-14 17:46:52
+[WARN ] STAIR_START_FULL          | Stair start cell already occupied        | stairs.txt          , line 12  | 2025-09-14 17:46:52
+[WARN ] STAIR_START_FULL          | Stair start cell already occupied        | stairs.txt          , line 13  | 2025-09-14 17:46:52
+[WARN ] STAIR_START_FULL          | Stair start cell already occupied        | stairs.txt          , line 14  | 2025-09-14 17:46:52
+[WARN ] STAIR_START_FULL          | Stair start cell already occupied        | stairs.txt          , line 15  | 2025-09-14 17:46:52
+[WARN ] STAIR_START_FULL          | Stair start cell already occupied        | stairs.txt          , line 16  | 2025-09-14 17:46:52
+[WARN ] STAIR_START_FULL          | Stair start cell already occupied        | stairs.txt          , line 17  | 2025-09-14 17:46:52
+[WARN ] STAIR_START_FULL          | Stair start cell already occupied        | stairs.txt          , line 18  | 2025-09-14 17:46:52
+[WARN ] STAIR_START_FULL          | Stair start cell already occupied        | stairs.txt          , line 19  | 2025-09-14 17:46:52
+[WARN ] STAIR_START_FULL          | Stair start cell already occupied        | stairs.txt          , line 20  | 2025-09-14 17:46:52
+[WARN ] START_FLOOR               | Range error on start floor               | walls.txt           , line 1   | 2025-09-14 17:46:52
+[WARN ] INVALID_NUM_DIGITS        | Invalid number of digits, line skipped   | flag.txt            , line 1   | 2025-09-14 17:46:52

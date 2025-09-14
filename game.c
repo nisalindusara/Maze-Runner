@@ -5,24 +5,13 @@
 
 Player players[NUM_OF_PLAYERS];
 Cell cells[NUM_OF_FLOORS][MAX_WIDTH][MAX_LENGTH];
-
-//dynamic array of all stairs
-Stair** stairs_array;           
 int stair_count = 0;            
 int stair_array_capacity = 6;   
-
-Cell* cell_flag;
-Cell* bawana_entrance_cell_ptr;
-
 int game_round = 0;
 bool game_on = true;
-
 MoveEvent event_list[MAX_EVENTS_PER_EACH_MOVE];
 int front = -1, rear = -1;
-
-char* time_buffer;
-
-FILE* log_fp;
+bool flag_loaded = false;
 
 /* ======================== SHARED UTILITIES ======================== */
 
@@ -95,9 +84,9 @@ void init_cells()
 void init_players()
 {
     char name_array[NUM_OF_PLAYERS] = {'A', 'B', 'C'};
-    PlayerDirection dir_array[NUM_OF_PLAYERS] = {NORTH, WEST, EAST};
     int starting_cells[NUM_OF_PLAYERS][3] = {{0,6,12},{0,9,8},{0,9,16}};
     int first_cells[NUM_OF_PLAYERS][3] = {{0,5,12},{0,9,7},{0,9,17}};
+    PlayerDirection dir_array[NUM_OF_PLAYERS] = {NORTH, WEST, EAST};
 
     for(int i = 0; i < NUM_OF_PLAYERS; i++)
     {
@@ -109,6 +98,7 @@ void init_players()
         players[i].direction = dir_array[i];
         players[i].starting_cell = &cells[starting_cells[i][0]][ starting_cells[i][1] ][ starting_cells[i][2] ];
         players[i].first_cell = &cells[first_cells[i][0]][ first_cells[i][1] ][ first_cells[i][2] ];
+        players[i].init_dir = dir_array[i];
         // initial position
         players[i].player_pos = players[i].starting_cell;
     }
@@ -264,85 +254,261 @@ char* get_current_datetime()
     return time_buffer;
 }
 
-void print_file_error(FileErrors error, char filename[])
+void log_file_error(FileErrors error, char filename[])
 {
+    char file_loc[50];
+    snprintf(file_loc, sizeof(file_loc), "%-20s", filename);
+
     switch(error)
     {
         case FILE_NOT_OPEN:
-            fprintf(log_fp, "[ERROR] Cannot open (file: %s) %s\n", filename, get_current_datetime());
-            printf("Game crashed! Check log.txt\n");
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
+                    "FILE_NOT_OPEN",
+                    "Cannot open file",
+                    file_loc,
+                    get_current_datetime());
             break;
         case EMPTY_FILE:
-            printf("Game crashed! Check log.txt\n");
-            fprintf(log_fp, "[ERROR] File is empty (file: %s). No data to process. %s\n", filename, get_current_datetime());
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
+                    "EMPTY_FILE",
+                    "File is empty, no data to process",
+                    file_loc,
+                    get_current_datetime());
             break;
-        default:
-            fprintf(log_fp, "[WARN] Unhandled file error detected. Execution may be unstable. %s\n", get_current_datetime());
     }
 }
 
-void print_file_error_line(FileErrors error, char filename[], int line_number)
+void log_file_error_line(FileErrors error, char filename[], int line_number)
 {
-    switch (error)
+    char file_loc[50];
+    snprintf(file_loc, sizeof(file_loc), "%-20s, line %-3d", filename, line_number);
+
+    switch(error)
     {
         case INVALID_NUM_DIGITS:
-            fprintf(log_fp, "[WARN] Invalid number of digits (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "INVALID_NUM_DIGITS",
+                    "Invalid number of digits, line skipped",
+                    file_loc,
+                    get_current_datetime());
             break;
         case NO_DIGITS:
-            fprintf(log_fp, "[WARN] No digits found (file %s, line %d). Line skipped\n", filename, line_number);
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "NO_DIGITS",
+                    "No digits found, line skipped",
+                    file_loc,
+                    get_current_datetime());
             break;
         case INVALID_FORMAT_LINE:
-            fprintf(log_fp, "[WARN] Invalid format (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "INVALID_FORMAT_LINE",
+                    "Invalid format, line skipped",
+                    file_loc,
+                    get_current_datetime());
             break;
-        default: 
-            fprintf(log_fp, "[WARN] Unhandled file error detected. Execution may be unstable.\n");
+        default:
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "UNKNOWN_FILE_ERROR",
+                    "Unhandled file error",
+                    file_loc,
+                    get_current_datetime());
     }
 }
 
-void print_range_error(RangeError error, char filename[], int line_number)
+void log_range_error(RangeError error, char filename[], int line_number)
 {
+    char file_loc[50];
+    snprintf(file_loc, sizeof(file_loc), "%-20s, line %-3d", filename, line_number);
+
     switch(error)
     {
         case FLOOR:
-            fprintf(log_fp, "[WARN] Range error on floor (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "FLOOR",
+                    "Range error on floor",
+                    file_loc,
+                    get_current_datetime());
             break;
         case START_FLOOR:
-            fprintf(log_fp, "[WARN] Range error on start floor (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "START_FLOOR",
+                    "Range error on start floor",
+                    file_loc,
+                    get_current_datetime());
             break;
         case END_FLOOR:
-            fprintf(log_fp, "[WARN] Range error on end floor (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "END_FLOOR",
+                    "Range error on end floor",
+                    file_loc,
+                    get_current_datetime());
             break;
         case START_WIDTH:
-            fprintf(log_fp, "[WARN] Range error on start width (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "START_WIDTH",
+                    "Range error on start width",
+                    file_loc,
+                    get_current_datetime());
             break;
         case START_LENGTH:
-            fprintf(log_fp, "[WARN] Range error on start length (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "START_LENGTH",
+                    "Range error on start length",
+                    file_loc,
+                    get_current_datetime());
             break;
         case END_WIDTH:
-            fprintf(log_fp, "[WARN] Range error on end width (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "END_WIDTH",
+                    "Range error on end width",
+                    file_loc,
+                    get_current_datetime());
             break;
         case END_LENGTH:
-            fprintf(log_fp, "[WARN] Range error on end length (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "END_LENGTH",
+                    "Range error on end length",
+                    file_loc,
+                    get_current_datetime());
             break;
         case WIDTH:
-            fprintf(log_fp, "[WARN] Range error on width (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "WIDTH",
+                    "Range error on width",
+                    file_loc,
+                    get_current_datetime());
             break;
         case LENGTH:
-            fprintf(log_fp, "[WARN] Range error on length (file %s, line %d). Line skipped.\n", filename, line_number);
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "LENGTH",
+                    "Range error on length",
+                    file_loc,
+                    get_current_datetime());
             break;
-        default: 
-            fprintf(log_fp, "[WARN] Unhandled file error detected. Execution may be unstable.\n");
+        default:
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "UNKNOWN_RANGE_ERROR",
+                    "Unhandled range error",
+                    file_loc,
+                    get_current_datetime());
+    }
+}
+
+void log_logic_error(LogicError error, char filename[], int line_number)
+{
+    char file_loc[50];
+    snprintf(file_loc, sizeof(file_loc), "%-20s, line %-3d", filename, line_number);
+
+    switch(error)
+    {
+        case INVALID_FLAG_POSITION:
+            fprintf(log_fp, "[WARN] %-25s | %-40s | %s | %s\n",
+                    "INVALID_FLAG_POSITION",
+                    "FLAG position is invalid. Generate new flag",
+                    file_loc,
+                    get_current_datetime());
+            break;
+        case INVALID_POLE_DEFINITION:
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "INVALID_POLE_DEFINITION",
+                    "Pole exit must be lower than entrance",
+                    file_loc,
+                    get_current_datetime());
+            break;
+        case POLE_ENTRANCE_INVALID:
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
+                    "POLE_ENTRANCE_INVALID",
+                    "Pole entrance is invalid",
+                    file_loc,
+                    get_current_datetime());
+            break;
+        case POLE_EXIT_INVALID:
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
+                    "POLE_EXIT_INVALID",
+                    "Pole exit is invalid",
+                    file_loc,
+                    get_current_datetime());
+            break;
+        case POLE_INTERCEPTION_INVALID:
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
+                    "POLE_INTERCEPTION_INVALID",
+                    "Pole intercepts another object",
+                    file_loc,
+                    get_current_datetime());
+            break;
+        case INVALID_STAIR_DEFINITION:
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
+                    "INVALID_STAIR_DEFINITION",
+                    "Stair definition is inconsistent",
+                    file_loc,
+                    get_current_datetime());
+            break;
+        case STAIR_START_INVALID:
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
+                    "STAIR_START_INVALID",
+                    "Stair start position is invalid",
+                    file_loc,
+                    get_current_datetime());
+            break;
+        case STAIR_END_INVALID:
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
+                    "STAIR_END_INVALID",
+                    "Stair end position is invalid",
+                    file_loc,
+                    get_current_datetime());
+            break;
+        case STAIR_START_FULL:
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "STAIR_START_FULL",
+                    "Stair start cell already occupied",
+                    file_loc,
+                    get_current_datetime());
+            break;
+        case STAIR_END_FULL:
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "STAIR_END_FULL",
+                    "Stair end cell already occupied",
+                    file_loc,
+                    get_current_datetime());
+            break;
+        case INVALID_WALL_POSITION:
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
+                    "INVALID_WALL_POSITION",
+                    "Wall placed in invalid position",
+                    file_loc,
+                    get_current_datetime());
+            break;
+        case SKIP_WALL_CELL:
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "SKIP_WALL_CELL",
+                    "Skipped cell due to wall placement",
+                    file_loc,
+                    get_current_datetime());
+            break;
+        case DIAGONAL_WALL:
+            fprintf(log_fp, "[ERROR] %-25s | %-40s | %s | %s\n",
+                    "DIAGONAL_WALL",
+                    "Diagonal wall placement not allowed",
+                    file_loc,
+                    get_current_datetime());
+            break;
+        default:
+            fprintf(log_fp, "[WARN ] %-25s | %-40s | %s | %s\n",
+                    "UNKNOWN_LOGIC_ERROR",
+                    "Unknown logic error",
+                    file_loc,
+                    get_current_datetime());
     }
 }
 
 void setup_logfile()
 {
     log_fp = fopen("log.txt", "w");
-    if(log_fp == NULL) perror("log.txt crashed!");
+    if(log_fp == NULL) perror("log.txt: warning: file open failed [LOG_CRSH]\n");
     fclose(log_fp);
 
     log_fp = fopen("log.txt", "a");
-    if(log_fp == NULL) perror("log.txt crashed!");
+    if(log_fp == NULL) perror("log.txt: warning: file open failed [LOG_CRSH]\n");
 }
 
 unsigned int get_random_seed() 
@@ -363,12 +529,12 @@ unsigned int get_seed()
     FILE* seed_fp = fopen("seed.txt", "r");
     if(seed_fp == NULL)
     {
-        print_file_error(FILE_NOT_OPEN, "seed.txt");
+        log_file_error(FILE_NOT_OPEN, "seed.txt");
         return get_random_seed();   
     }
     if(fgetc(seed_fp) == EOF)
     {
-        print_file_error(EMPTY_FILE, "seed.txt");
+        log_file_error(EMPTY_FILE, "seed.txt");
         return get_random_seed();
     }
 
@@ -377,7 +543,7 @@ unsigned int get_seed()
 
     if (matched != 1)   // If no unsigned int was found
     {
-        // maybe create a custom type for print_file_error and send the error but all the calls have to be updated then
+        log_file_error_line(INVALID_FORMAT_LINE, "seed.txt", 1);
         fclose(seed_fp);
         return get_random_seed();
     }
@@ -386,40 +552,67 @@ unsigned int get_seed()
     while ((ch = fgetc(seed_fp)) != EOF) { 
         if (!isspace(ch)) 
         {  
-            //print warning invalid format in seed.txt but will continue with the found seed 
+            log_file_error_line(INVALID_FORMAT_LINE, "seed.txt", 1);
+            fclose(seed_fp);
+            return get_random_seed();
         }
     }
     fclose(seed_fp);
     return value;
 }
 
-void load_flag(int* digits, char filename[], int num_lines)
+Cell* generate_custom_flag() {
+    int floor, width, length;
+
+    while (1) {
+        floor = rand() % NUM_OF_FLOORS;      // 0 to NUM_OF_FLOORS-1
+        width = rand() % MAX_WIDTH;          // 0 to MAX_WIDTH-1
+        length = rand() % MAX_LENGTH;        // 0 to MAX_LENGTH-1
+
+        Cell* c = &cells[floor][width][length];
+
+        // Check validity and not starting area / bawana
+        if (c->is_valid && !check_cell_types(c, CELL_STARTING_AREA | CELL_BAWANA | BAWANA_ENTRANCE)) {
+            remove_cell_type(c, CELL_NONE);
+            add_cell_type(c, CELL_FLAG);
+            return c;  // return the new valid flag cell
+        }
+    }
+}
+
+void load_flag_or_generate(int* digits, char filename[], int num_lines)
 {
     int floor = digits[0];
     int width_num = digits[1];
     int length_num = digits[2];
-    if( floor<0 || floor>2 ) 
+    if( floor < 0 || floor >= NUM_OF_FLOORS) 
     {
-        print_range_error(FLOOR, filename, num_lines); 
+        log_range_error(FLOOR, filename, num_lines); 
         return;
     }
-    if( width_num<0 || width_num>9 ) 
+    if( width_num < 0 || width_num >= MAX_WIDTH ) 
     {
-        print_range_error(WIDTH, filename, num_lines); 
+        log_range_error(WIDTH, filename, num_lines); 
         return;
     }
-    if( length_num<0 || length_num>24 ) 
+    if( length_num < 0 || length_num >= MAX_LENGTH ) 
     {
-        print_range_error(LENGTH, filename, num_lines); 
+        log_range_error(LENGTH, filename, num_lines); 
         return;
     }
     //Init flag
-    if(cells[floor][width_num][length_num].is_valid && !check_cell_types(&cells[floor][width_num][length_num], CELL_STARTING_AREA | CELL_BAWANA) )
+    if(cells[floor][width_num][length_num].is_valid && !check_cell_types(&cells[floor][width_num][length_num], CELL_STARTING_AREA | CELL_BAWANA | BAWANA_ENTRANCE) )
     {
         cell_flag = &cells[floor][width_num][length_num];
-        remove_cell_type(cell_flag, CELL_NONE);
-        add_cell_type(cell_flag, CELL_FLAG);
     }
+    else
+    {
+        cell_flag = generate_custom_flag();
+        log_logic_error(INVALID_FLAG_POSITION, filename, num_lines);
+    }
+    remove_cell_type(cell_flag, CELL_NONE);
+    add_cell_type(cell_flag, CELL_FLAG);
+    flag_loaded = true;
 }
 
 void load_poles(int* digits, char filename[], int num_lines)
@@ -429,40 +622,44 @@ void load_poles(int* digits, char filename[], int num_lines)
 
     if( exit_floor!=1 && exit_floor!=0 ) 
     {
-        print_range_error(END_FLOOR, filename, num_lines); 
+        log_range_error(END_FLOOR, filename, num_lines); 
         return;
     }
     if( enter_floor!=1 && enter_floor!=2 ) 
     {
-        print_range_error(START_FLOOR, filename, num_lines); 
+        log_range_error(START_FLOOR, filename, num_lines); 
         return;
     }
     if( width_num<0 || width_num>=MAX_WIDTH ) 
     {
-        print_range_error(WIDTH, filename, num_lines); 
+        log_range_error(WIDTH, filename, num_lines); 
         return;
     }
     if( length_num<0 || length_num>=MAX_LENGTH ) 
     {
-        print_range_error(LENGTH, filename, num_lines); 
+        log_range_error(LENGTH, filename, num_lines); 
         return;
     }
     //Handle conditions, return _numif a condition is false, if get to the last statement add the pole
     if(exit_floor>=enter_floor)
     {
+        log_logic_error(INVALID_POLE_DEFINITION, filename, num_lines);
         return;
     }
     if(cells[enter_floor][width_num][length_num].is_valid==false)
     {
+        log_logic_error(POLE_ENTRANCE_INVALID, filename, num_lines);
         return;
     }
     if(cells[exit_floor][width_num][length_num].is_valid==false)
     {
+        log_logic_error(POLE_EXIT_INVALID, filename, num_lines);
         return;
     }
 
     if(exit_floor==0 && enter_floor==2 && cells[1][width_num][length_num].is_valid == false)
     {
+        log_logic_error(POLE_INTERCEPTION_INVALID, filename, num_lines);
         return;
     }
     else
@@ -489,32 +686,32 @@ void load_stairs(int* digits, char filename[], int num_lines)
 
     if( start_floor<0 || start_floor>1 ) 
     {
-        print_range_error(START_FLOOR, filename, num_lines); 
+        log_range_error(START_FLOOR, filename, num_lines); 
         return;
     }
     if( start_width_num<0 || start_width_num>=MAX_WIDTH ) 
     {
-        print_range_error(START_WIDTH, filename, num_lines); 
+        log_range_error(START_WIDTH, filename, num_lines); 
         return;
     }
     if( start_length_num<0 || start_length_num>=MAX_LENGTH ) 
     {
-        print_range_error(START_LENGTH, filename, num_lines); 
+        log_range_error(START_LENGTH, filename, num_lines); 
         return;
     }
     if( end_floor!=1 && end_floor!=2 ) 
     {
-        print_range_error(END_FLOOR, filename, num_lines); 
+        log_range_error(END_FLOOR, filename, num_lines); 
         return;
     }
     if( end_width_num<0 || end_width_num>=MAX_WIDTH ) 
     {
-        print_range_error(END_WIDTH, filename, num_lines); 
+        log_range_error(END_WIDTH, filename, num_lines); 
         return;
     }
     if( end_length_num<0 || end_length_num>=MAX_LENGTH ) 
     {
-        print_range_error(END_LENGTH, filename, num_lines); 
+        log_range_error(END_LENGTH, filename, num_lines); 
         return;
     }
 
@@ -523,14 +720,17 @@ void load_stairs(int* digits, char filename[], int num_lines)
     
     if(start_floor >= end_floor)
     {
+        log_logic_error(INVALID_STAIR_DEFINITION, filename, num_lines);
         return;
     }
     if(stair_start_cell->is_valid==false)
     {
+        log_logic_error(STAIR_START_INVALID, filename, num_lines);
         return;
     }
     if(stair_end_cell->is_valid==false)
     {
+        log_logic_error(STAIR_END_INVALID, filename, num_lines);
         return;
     }
 
@@ -551,8 +751,8 @@ void load_stairs(int* digits, char filename[], int num_lines)
         stairs_array[stair_count++] = new_stair;
 
         // Point start and end cells to the stair object
-        stair_start_cell->data.stairs[stair_start_cell->data.stair_count++] = new_stair;
-        stair_end_cell->data.stairs[stair_end_cell->data.stair_count++] = new_stair;
+        stair_start_cell->data.stairs[(stair_start_cell->data.stair_count)++] = new_stair;
+        stair_end_cell->data.stairs[(stair_end_cell->data.stair_count)++] = new_stair;
 
         remove_cell_type(stair_start_cell, CELL_NONE);
         add_cell_type(stair_start_cell, CELL_STAIR_START);
@@ -562,12 +762,26 @@ void load_stairs(int* digits, char filename[], int num_lines)
 
         if(stair_start_cell->floor == 0 && stair_end_cell->floor == 2)
         {
-            //make the middle floor cell valid [CHECK] whether the intercepting cell should be a valid or not
+            int middle_w = (stair_start_cell->width + stair_end_cell->width) / 2;
+            int middle_l = (stair_start_cell->length + stair_end_cell->length) / 2;
+            if(cells[1][middle_l][middle_w].is_valid)
+            {
+                cells[1][middle_l][middle_w].celltypes = CELL_WALL;
+            }
         }
     }
     else
     {
-        return;
+        if(stair_start_cell->data.stair_count == 2)
+        {
+            log_logic_error(STAIR_START_FULL, filename, num_lines);
+            return;
+        }
+        else
+        {
+            log_logic_error(STAIR_END_FULL, filename, num_lines);
+            return;
+        }
     }
 }
 
@@ -591,27 +805,27 @@ void load_walls(int* digits, char filename[], int num_lines)
 
     if( floor<0 || floor>2 ) 
     {
-        print_range_error(START_FLOOR, filename, num_lines); 
+        log_range_error(START_FLOOR, filename, num_lines); 
         return;
     }
     if( start_width_num<0 || start_width_num>=MAX_WIDTH ) 
     {
-        print_range_error(START_WIDTH, filename, num_lines); 
+        log_range_error(START_WIDTH, filename, num_lines); 
         return;
     }
     if( start_length_num<0 || start_length_num>=MAX_LENGTH ) 
     {
-        print_range_error(START_LENGTH, filename, num_lines); 
+        log_range_error(START_LENGTH, filename, num_lines); 
         return;
     }
     if( end_width_num<0 || end_width_num>=MAX_WIDTH ) 
     {
-        print_range_error(END_WIDTH, filename, num_lines); 
+        log_range_error(END_WIDTH, filename, num_lines); 
         return;
     }
     if( end_length_num<0 || end_length_num>=MAX_LENGTH ) 
     {
-        print_range_error(END_LENGTH, filename, num_lines); 
+        log_range_error(END_LENGTH, filename, num_lines); 
         return;
     }
     //Handle conditions
@@ -623,7 +837,11 @@ void load_walls(int* digits, char filename[], int num_lines)
             {
                 set_cell_type(&cells[floor][start_width_num][start_length_num], CELL_WALL);
             }
-            else return;
+            else 
+            {
+                log_logic_error(INVALID_WALL_POSITION, filename, num_lines);
+                return;
+            }
         }
         else    //horizontal wall
         {
@@ -635,7 +853,11 @@ void load_walls(int* digits, char filename[], int num_lines)
                     {
                         set_cell_type(&cells[floor][start_width_num][length], CELL_WALL);
                     }
-                    else break; //stop this wall, but keep loading the other walls
+                    else 
+                    {
+                        log_logic_error(SKIP_WALL_CELL, filename, num_lines);
+                        break; //stop this wall, but keep loading the other walls
+                    }
                 }
             }
             else
@@ -646,7 +868,11 @@ void load_walls(int* digits, char filename[], int num_lines)
                     {
                         set_cell_type(&cells[floor][start_width_num][length], CELL_WALL);
                     }
-                    else break;
+                    else 
+                    {
+                        log_logic_error(SKIP_WALL_CELL, filename, num_lines);
+                        break; //stop this wall, but keep loading the other walls
+                    }
                 }
             }
         }
@@ -664,7 +890,11 @@ void load_walls(int* digits, char filename[], int num_lines)
                     {
                         set_cell_type(&cells[floor][width][start_length_num], CELL_WALL);
                     }
-                    else break;
+                    else 
+                    {
+                        log_logic_error(SKIP_WALL_CELL, filename, num_lines);
+                        break; //stop this wall, but keep loading the other walls
+                    }
                 }
             }
             else
@@ -675,12 +905,17 @@ void load_walls(int* digits, char filename[], int num_lines)
                     {
                         set_cell_type(&cells[floor][width][start_length_num], CELL_WALL);
                     }
-                    else break;
+                    else 
+                    {
+                        log_logic_error(SKIP_WALL_CELL, filename, num_lines);
+                        break; //stop this wall, but keep loading the other walls
+                    }
                 }
             }
         }
         else    //diagonal wall [NOT ALLOWED]
         {   
+            log_logic_error(DIAGONAL_WALL, filename, num_lines);
             return;
         }    
     }
@@ -700,10 +935,9 @@ void check_digits(int* digits, int count, char filename[], int num_lines)
             load_poles(digits, filename, num_lines);
             break;
         case 3:
-            load_flag(digits, filename, num_lines);
-            break;
+            if(!flag_loaded) load_flag_or_generate(digits, filename, num_lines);
         default:
-            print_file_error_line(INVALID_NUM_DIGITS, filename, num_lines);
+            log_file_error_line(INVALID_NUM_DIGITS, filename, num_lines);
     }
 }
 
@@ -757,7 +991,7 @@ int parse_and_process_line(const char* line, char filename[], int num_lines)
     }
     else
     {
-        print_file_error_line(NO_DIGITS, filename, num_lines);
+        log_file_error_line(NO_DIGITS, filename, num_lines);
     }
     
     return 1;
@@ -770,7 +1004,7 @@ int validate_file(char filename[])
     FILE* dataf = fopen(filename, "r");
     if(dataf == NULL)  
     {
-        print_file_error(FILE_NOT_OPEN, filename);
+        log_file_error(FILE_NOT_OPEN, filename);
         exit(1);
         return 0;
     }
@@ -778,7 +1012,7 @@ int validate_file(char filename[])
     int ch = fgetc(dataf);
     if (ch == EOF) 
     {
-        print_file_error(EMPTY_FILE, filename);
+        log_file_error(EMPTY_FILE, filename);
         exit(1);
         return 0;
     }
@@ -793,7 +1027,7 @@ int validate_file(char filename[])
         buffer[strcspn(buffer, "\n")] = '\0';       
         if(!parse_and_process_line(buffer, filename, line_num))
         {
-            print_file_error_line(INVALID_FORMAT_LINE, filename, line_num);
+            log_file_error_line(INVALID_FORMAT_LINE, filename, line_num);
         }
         line_num++;
     }
@@ -883,7 +1117,7 @@ void print_output(MoveResult result, Player* p, int path_cost, Cell* trigger_cel
             printf("Player %c eats from Bawana and have a bad case of food poisoning. Will need three rounds to recover.\n", p->name);
             return;
         case TO_BAWANA_DISORIENT:
-            printf("Player %c eats from Bawana and is disoriented and is placed at the entrance of Bawana with 50 movement points.", p->name);
+            printf("Player %c eats from Bawana and is disoriented and is placed at the entrance of Bawana with 50 movement points.\n", p->name);
             return;
         case TO_BAWANA_TRIGGER:
             printf("Player %c eats from Bawana and is triggered due to bad quality of food. Player %c is placed at the entrance of Bawana with 50 movement points.\n", p->name, p->name);
@@ -950,11 +1184,21 @@ bool event_list_empty()
     return front == -1;
 }
 
+MoveResult peek_last_event()
+{
+    return event_list[rear].event;
+}
+
+void reset_event_list()
+{
+    front = rear = -1;
+}
+
 void add_event(MoveResult event_type, Cell* trigger_cell, Cell* dest_cell)
 {
     if(event_list_full())
     {
-        printf("EVENT_LST_FULL_ERR : Please Contact support@example.com\n");
+        printf("EVENT_LST_FULL_ERR (rear=%d): Please Contact support@example.com\n", rear);
         exit(1);
     }
     rear = (rear + 1) % MAX_EVENTS_PER_EACH_MOVE;
@@ -979,16 +1223,7 @@ void print_event_list(Player* plyr, int path_cost)
         if (i == rear) break;
         i = (i + 1) % MAX_EVENTS_PER_EACH_MOVE;
     }
-}
-
-MoveResult peek_last_event()
-{
-    return event_list[rear].event;
-}
-
-void reset_event_list()
-{
-    front = rear = -1;
+    reset_event_list();
 }
 
 /* ================ SUPPORT FUNCTIONS FOR HANDLER FUNCTIONS ================ */
@@ -998,24 +1233,36 @@ void reset_event_list()
     and validating moves based on player states and environment constraints.
 */
 
+HandlerResult handle_stair_start(Player* plyr, int* path_cost);
+HandlerResult handle_stair_end(Player* plyr, int* path_cost);
+HandlerResult handle_pole_enter(Player* plyr, int* paht_cost);
 static const CellAction actions[];
 
-HandlerResult check_landed_cell(Player* plyr)
+HandlerResult check_landed_cell(Player* plyr, int* path_cost)
 {
-    for(int i = 0; i < 2; i++)
+    if(check_cell_types(plyr->player_pos, CELL_FLAG))
     {
-        if(plyr->player_pos->celltypes & actions[i].flag)
-        {
-            HandlerResult step_result = actions[i].handler(plyr, NULL);
-            if(step_result == WIN_GAME)   
-            {
-                return WIN_GAME;
-            }
-            else
-            {
-                return CONTINUE_STEP;
-            }
-        }
+        return WIN_GAME;
+    }
+    else if(check_cell_types(plyr->player_pos, CELL_BAWANA))
+    {
+        return PLACED_ON_BAWANA;
+    }
+    else if(check_cell_types(plyr->player_pos, CELL_STAIR_START))
+    {
+        handle_stair_start(plyr, path_cost);
+    }
+    else if(check_cell_types(plyr->player_pos, CELL_STAIR_END))
+    {
+        handle_stair_end(plyr, path_cost);
+    }
+    else if(check_cell_types(plyr->player_pos, CELL_POLE_ENTER))
+    {
+        handle_pole_enter(plyr, path_cost);
+    }
+    else
+    {
+        return CONTINUE_STEP;
     }
 }
 
@@ -1076,107 +1323,123 @@ HandlerResult handle_wall(Player* plyr, int* ignore_val)
     return ABORT_MOVE;
 }
 
-HandlerResult handle_stair(Player* plyr, StairDirection wrong_dir, Cell* stair0_dest_cell, Cell* stair1_dest_cell)
+HandlerResult handle_stair(Player* plyr, StairDirection wrong_dir, Cell* stair0_dest_cell, Cell* stair1_dest_cell, int* path_cost, StairCheckType check_type)
 {
     Cell* cell = plyr->player_pos;
-    if(cell->data.stair_count == 1)
+    if (cell->data.stair_count == 1)
     {
-        if(cell->data.stairs[0]->direction != wrong_dir)
+        if (cell->data.stairs[0]->direction != wrong_dir &&
+            (check_type == CHECK_START_CELL ? cell->data.stairs[0]->start_cell : cell->data.stairs[0]->end_cell) == cell)
         {
             add_event(TAKE_STAIR, plyr->player_pos, stair0_dest_cell);
             plyr->player_pos = stair0_dest_cell;
-            return check_landed_cell(plyr);
+            return check_landed_cell(plyr, path_cost);
         }
-        else return ABORT_MOVE;
+        else
+        {
+            return ABORT_MOVE;
+        }
     }
     else
     {
-        if((cell->data.stairs[0]->start_cell == cell)&&(cell->data.stairs[1]->start_cell == cell))
+        bool stair0_matches = (check_type == CHECK_START_CELL ? cell->data.stairs[0]->start_cell : cell->data.stairs[0]->end_cell) == cell;
+        bool stair1_matches = (check_type == CHECK_START_CELL ? cell->data.stairs[1]->start_cell : cell->data.stairs[1]->end_cell) == cell;
+
+        if (stair0_matches && stair1_matches)
         {
-            if((cell->data.stairs[0]->direction != wrong_dir) && (cell->data.stairs[1]->direction != wrong_dir))
+            if (cell->data.stairs[0]->direction != wrong_dir && cell->data.stairs[1]->direction != wrong_dir)
             {
                 Cell* temp = plyr->player_pos;
                 plyr->player_pos = pick_stair_heuristic(stair0_dest_cell, stair1_dest_cell, cell_flag);
                 add_event(TAKE_STAIR, temp, plyr->player_pos);
-                return check_landed_cell(plyr);
+                return check_landed_cell(plyr, path_cost);
             }
-            else if(cell->data.stairs[0]->direction != wrong_dir)
+            else if (cell->data.stairs[0]->direction != wrong_dir)
             {
                 add_event(TAKE_STAIR, plyr->player_pos, stair0_dest_cell);
                 plyr->player_pos = stair0_dest_cell;
-                return check_landed_cell(plyr);
+                return check_landed_cell(plyr, path_cost);
             }
-            else if(cell->data.stairs[1]->direction != wrong_dir)
+            else if (cell->data.stairs[1]->direction != wrong_dir)
             {
                 add_event(TAKE_STAIR, plyr->player_pos, stair1_dest_cell);
                 plyr->player_pos = stair1_dest_cell;
-                return check_landed_cell(plyr);
+                return check_landed_cell(plyr, path_cost);
             }
-            else return ABORT_MOVE;
+            else
+            {
+                return ABORT_MOVE;
+            }
         }
-        else if((cell->data.stairs[0]->start_cell == cell)&&(cell->data.stairs[0]->direction != wrong_dir))
+        else if (stair0_matches && cell->data.stairs[0]->direction != wrong_dir)
         {
             add_event(TAKE_STAIR, plyr->player_pos, stair0_dest_cell);
             plyr->player_pos = stair0_dest_cell;
-            return check_landed_cell(plyr);
+            return check_landed_cell(plyr, path_cost);
         }
-        else if((cell->data.stairs[1]->start_cell == cell)&&(cell->data.stairs[1]->direction != wrong_dir))
+        else if (stair1_matches && cell->data.stairs[1]->direction != wrong_dir)
         {
             add_event(TAKE_STAIR, plyr->player_pos, stair1_dest_cell);
             plyr->player_pos = stair1_dest_cell;
-            return check_landed_cell(plyr);
+            return check_landed_cell(plyr, path_cost);
         }
-        else return ABORT_MOVE;
+        else
+        {
+            return ABORT_MOVE;
+        }
     }
 }
 
-HandlerResult handle_stair_start(Player* plyr, int* ignore_val)
+HandlerResult handle_stair_start(Player* plyr, int* path_cost)
 {
     if (plyr->player_pos->data.stair_count == 1 || plyr->player_pos->data.stairs[1] == NULL) 
     {
         return handle_stair( 
             plyr,
-            DOWN,
+            DOWN,   //wrong direction
             plyr->player_pos->data.stairs[0]->end_cell,
-            NULL   // second stair doesn’t exist
+            NULL,    // second stair doesn’t exist
+            path_cost,  CHECK_START_CELL
         );
     }
 
     // Two stairs
     return handle_stair(
         plyr,
-        DOWN,
+        DOWN,   //wrong direction
         plyr->player_pos->data.stairs[0]->end_cell,
-        plyr->player_pos->data.stairs[1]->end_cell
+        plyr->player_pos->data.stairs[1]->end_cell,
+        path_cost, CHECK_START_CELL
     );
 }
 
-HandlerResult handle_stair_end(Player* plyr, int* ignore_val)
+HandlerResult handle_stair_end(Player* plyr, int* path_cost)
 {
     if (plyr->player_pos->data.stair_count == 1 || plyr->player_pos->data.stairs[1] == NULL) 
     {
-        return handle_stair( 
-            plyr,
-            UP,
-            plyr->player_pos->data.stairs[0]->end_cell,
-            NULL   // second stair doesn’t exist
+        return handle_stair(plyr,
+            UP, //wrong direction
+            plyr->player_pos->data.stairs[0]->start_cell,
+            NULL,  // second stair doesn’t exist
+            path_cost, CHECK_END_CELL
         );
     }
 
     // Two stairs
     return handle_stair(
         plyr,
-        UP,
-        plyr->player_pos->data.stairs[0]->end_cell,
-        plyr->player_pos->data.stairs[1]->end_cell
+        UP, //wrong direction
+        plyr->player_pos->data.stairs[0]->start_cell,
+        plyr->player_pos->data.stairs[1]->start_cell,
+        path_cost, CHECK_END_CELL
     );
 }
 
-HandlerResult handle_pole_enter(Player* plyr, int* ignore_val)
+HandlerResult handle_pole_enter(Player* plyr, int* path_cost)
 {
     add_event(TAKE_POLE, plyr->player_pos, plyr->player_pos->data.pole_data.dest_cell);
     plyr->player_pos = plyr->player_pos->data.pole_data.dest_cell;
-    return check_landed_cell(plyr);
+    return check_landed_cell(plyr, path_cost);
 }
 
 HandlerResult handle_no_special_effect_cell(Player* plyr, int* ignore_val)
@@ -1191,6 +1454,7 @@ HandlerResult handle_starting_area(Player* plyr, int* ignore_val)
     {
        plyr->player_pos = plyr->starting_cell;
        plyr->player_state = INACTIVE; 
+       plyr->direction = plyr->init_dir;
     }
     return ABORT_MOVE;
 }
@@ -1200,24 +1464,11 @@ HandlerResult handle_flag(Player* plyr, int* ignore_val)
     return WIN_GAME;
 }
 
-HandlerResult handle_bawana(Player* plyr, int* path_cost)  
-{   
-    //handle path_cost == NULL
-    int local_path_cost = 0;
-    if(path_cost) local_path_cost = *path_cost;
-    //only get called when a player went to bawana through a pole/stair
-    player_to_bawana(plyr);
-    print_event_list(plyr, local_path_cost);
-    reset_event_list();
-    return ABORT_MOVE;
-}
-
 static const CellAction actions[] = {                           
-    { CELL_FLAG,                handle_flag             },          
+    { CELL_FLAG,                handle_flag             },                  
     { CELL_STAIR_START,         handle_stair_start      },
     { CELL_STAIR_END,           handle_stair_end        },
     { CELL_POLE_ENTER,          handle_pole_enter       },
-    { CELL_BAWANA,              handle_bawana           },          
     { CELL_NORMAL_BONUS,        handle_normal_bonus     },
     { CELL_NORMAL_CONSUMABLE,   handle_normal_consumable},
     { BAWANA_ENTRANCE,          handle_no_special_effect_cell   },
@@ -1276,6 +1527,7 @@ Bounds move_one_cell(Player* plyr, PlayerDirection dir)
     return NO_BOUNDS;
 }
 
+/* Apply the effects to the player based on his cell position and print output */
 void player_to_bawana(Player* plyr)
 {
     if(check_cell_types(plyr->player_pos, BAWANA_BONUS))
@@ -1328,8 +1580,23 @@ void capture_player(int current_player_index)
         if(players[current_player_index].player_pos == players[p_index].player_pos)
         {
             players[p_index].player_pos = players[p_index].starting_cell;
+            players[p_index].player_state = INACTIVE;
+            players[p_index].direction = players[p_index].init_dir;
+            players[p_index].effect_turns = 0;
+            printf("Player %c capture Player %c. Player %c is placed at the [%d, %d, %d] in starting area and direction is changed to %s.\n", 
+                players[current_player_index].name, players[p_index].name, players[p_index].name, players[p_index].player_pos->floor,
+                players[p_index].player_pos->width, players[p_index].player_pos->length, get_player_dir_string(players[p_index].direction));
         }
     }
+}
+
+void process_movement_blocked(Player* plyr, Cell* position_before_move)
+{
+    plyr->player_pos = position_before_move;
+    print_output(MOVEMENT_BLOCKED, plyr, 0, NULL, NULL);
+    plyr->mp_score -= 2;
+    plyr->move_value = 0;
+    print_output(COMPLETE_MOVE, plyr, -2, NULL, NULL);
 }
 
 void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int player_index, int move_factor)
@@ -1341,12 +1608,8 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
     {
         if(move_one_cell(plyr, move_direction) != NO_BOUNDS)
         {
-            plyr->player_pos = position_before_move;
-            print_output(MOVEMENT_BLOCKED, plyr, 0, NULL, NULL);
-            plyr->mp_score -= 2;
-            plyr->move_value = 0;
-            print_output(COMPLETE_MOVE, plyr, -2, NULL, NULL);
-            goto partial_move;    //terminates step
+            process_movement_blocked(plyr, position_before_move);
+            goto partial_move;    //terminates step by exiting the for loop
         }
         
         if(plyr->player_pos->is_valid)
@@ -1358,22 +1621,26 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
                     HandlerResult step_result = actions[j].handler(plyr, &path_cost);
                     if(step_result == CONTINUE_STEP)
                     {
-                        break;
+                        break;  //take the next step
                     }
                     else if(step_result == ABORT_MOVE)
                     {
-                        plyr->player_pos = position_before_move;
-                        print_output(MOVEMENT_BLOCKED, plyr, 0, NULL, NULL);
-                        plyr->mp_score -= 2;
-                        plyr->move_value = 0;
-                        print_output(COMPLETE_MOVE, plyr, -2, NULL, NULL);
-                        goto partial_move;
+                        process_movement_blocked(plyr, position_before_move);
+                        goto partial_move;  
                     }
-                    else    //game won
+                    else if(step_result == WIN_GAME)    
                     {
                         game_on = false;
                         add_event(PLAYER_WIN, plyr->player_pos, NULL);
                         print_event_list(plyr, path_cost);
+                        return;
+                    }
+                    else    //PLACED_ON_BAWANA
+                    {
+                        printf("===================PLAYER PLACED ON BAWANA=====================\n");
+                        exit(0);
+                        print_event_list(plyr, path_cost);
+                        player_to_bawana(plyr);
                         return;
                     }
                 }   
@@ -1381,11 +1648,7 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
         }
         else
         {
-            plyr->player_pos = position_before_move;
-            print_output(MOVEMENT_BLOCKED, plyr, 0, NULL, NULL);
-            plyr->mp_score -= 2;
-            plyr->move_value = 0;
-            print_output(COMPLETE_MOVE, plyr, -2, NULL, NULL);
+            process_movement_blocked(plyr, position_before_move);
             goto partial_move;
         }
     }    
@@ -1407,6 +1670,7 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
 
 void handle_player_state_movement(Player* plyr, int player_index)
 {
+    /* Start the Move by rolling the dice and adding the event to the queue */
     plyr->move_value = movement_dice();
     printf("\n");
 
@@ -1417,6 +1681,7 @@ void handle_player_state_movement(Player* plyr, int player_index)
     }
     else add_event(START_MOVE, NULL, NULL);
 
+    /* Handle the player move according to the player state */
     if(plyr->player_state == ACTIVE)
     {
         handle_cell_traversal(plyr, plyr->direction, player_index, 1);
@@ -1446,6 +1711,7 @@ void handle_player_state_movement(Player* plyr, int player_index)
                     plyr->player_pos = &cells[0][(rand() % 3) + 7][(rand() % 4) + 21];
                     printf("Player %c is now fit to proceed form the food poisoning episode and now placed on a %s and the effects take place.\n", plyr->name, get_bawana_cell_type(plyr->player_pos->celltypes));
                     player_to_bawana(plyr);
+                    reset_event_list();
                     return;
                 }
                 printf("Player %c is still food poisoned and misses the turn.\n", plyr->name);
@@ -1460,6 +1726,8 @@ void handle_player_state_movement(Player* plyr, int player_index)
                     {
                         plyr->player_state = ACTIVE;
                         printf("Player %c has recovered from disorientation.\n", plyr->name);
+                        handle_cell_traversal(plyr, plyr->direction, player_index, 1);
+                        reset_event_list();
                         return;
                     }
                     plyr->effect_turns--;
@@ -1513,21 +1781,21 @@ void play_game()
 {
     time_buffer = (char*)malloc(20 * sizeof(char));
     stairs_array = malloc(stair_array_capacity * sizeof(Stair*));
-
+    
     srand(get_seed());
     init_cells();
     init_players();
     init_bawana();
     read_data();
     set_normal_cells();
-
+    
     int player_index = 0;
     while(game_on)
     {
         if(player_index == 0)
         {
             game_round++;
-            printf("\nGAME ROUND: %d\n", game_round);
+            printf("\n---------- GAME ROUND: %d----------\n", game_round);
         }
         if(game_round % GAME_SETTING == 0) change_stair_direction();
         
