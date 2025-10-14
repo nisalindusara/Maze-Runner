@@ -220,7 +220,8 @@ typedef enum {
     CONTINUE_STEP,
     ABORT_MOVE,
     WIN_GAME,
-    PLACED_ON_BAWANA
+    PLACED_ON_BAWANA,
+    INFINITE_LOOP
 } HandlerResult;
 
 typedef HandlerResult (*CellHandler)(Player*, int*);

@@ -1129,18 +1129,19 @@ void reset_event_list()
     front = rear = -1;
 }
 
-void add_event(MoveResult event_type, Cell* trigger_cell, Cell* dest_cell)
+/* return true in case of a successful addition and false otherwise (event list full)*/
+bool add_event(MoveResult event_type, Cell* trigger_cell, Cell* dest_cell)
 {
     if(event_list_full())
     {
-        printf("EVENT_LST_FULL_ERR (rear=%d): Please Contact support@example.com\n", rear);
-        exit(1);
+        return false;
     }
     rear = (rear + 1) % MAX_EVENTS_PER_EACH_MOVE;
     if(event_list_empty()) front = 0;
     event_list[rear].event = event_type;     
     event_list[rear].data.trigger_cell = trigger_cell;
     event_list[rear].data.dest_cell = dest_cell;
+    return true;
 }
 
 void print_event_list(Player* plyr, int path_cost)
@@ -1266,7 +1267,11 @@ HandlerResult handle_stair(Player* plyr, StairDirection wrong_dir, Cell* stair0_
         if (cell->data.stairs[0]->direction != wrong_dir &&
             (check_type == CHECK_START_CELL ? cell->data.stairs[0]->start_cell : cell->data.stairs[0]->end_cell) == cell)
         {
-            add_event(TAKE_STAIR, plyr->player_pos, stair0_dest_cell);
+            if(!add_event(TAKE_STAIR, plyr->player_pos, stair0_dest_cell)) 
+            {
+                printf("Player %c moves through an infinite loop. Player %c move to his starting position\n", plyr->name, plyr->name);
+                return INFINITE_LOOP;
+            }
             plyr->player_pos = stair0_dest_cell;
             return check_landed_cell(plyr, path_cost);
         }
@@ -1286,18 +1291,30 @@ HandlerResult handle_stair(Player* plyr, StairDirection wrong_dir, Cell* stair0_
             {
                 Cell* temp = plyr->player_pos;
                 plyr->player_pos = pick_stair_heuristic(stair0_dest_cell, stair1_dest_cell, cell_flag);
-                add_event(TAKE_STAIR, temp, plyr->player_pos);
+                if(!add_event(TAKE_STAIR, temp, plyr->player_pos))
+                {
+                    printf("Player %c moves through an infinite loop. Player %c move to his starting position\n", plyr->name, plyr->name);
+                    return INFINITE_LOOP;
+                }
                 return check_landed_cell(plyr, path_cost);
             }
             else if (cell->data.stairs[0]->direction != wrong_dir)
             {
-                add_event(TAKE_STAIR, plyr->player_pos, stair0_dest_cell);
+                if(!add_event(TAKE_STAIR, plyr->player_pos, stair0_dest_cell))
+                {
+                printf("Player %c moves through an infinite loop. Player %c move to his starting position\n", plyr->name, plyr->name);
+                return INFINITE_LOOP;
+                }
                 plyr->player_pos = stair0_dest_cell;
                 return check_landed_cell(plyr, path_cost);
             }
             else if (cell->data.stairs[1]->direction != wrong_dir)
             {
-                add_event(TAKE_STAIR, plyr->player_pos, stair1_dest_cell);
+                if(!add_event(TAKE_STAIR, plyr->player_pos, stair1_dest_cell))
+                {
+                printf("Player %c moves through an infinite loop. Player %c move to his starting position\n", plyr->name, plyr->name);
+                return INFINITE_LOOP;
+                }
                 plyr->player_pos = stair1_dest_cell;
                 return check_landed_cell(plyr, path_cost);
             }
@@ -1308,13 +1325,21 @@ HandlerResult handle_stair(Player* plyr, StairDirection wrong_dir, Cell* stair0_
         }
         else if (stair0_matches && cell->data.stairs[0]->direction != wrong_dir)
         {
-            add_event(TAKE_STAIR, plyr->player_pos, stair0_dest_cell);
+            if(!add_event(TAKE_STAIR, plyr->player_pos, stair0_dest_cell))
+            {
+                printf("Player %c moves through an infinite loop. Player %c move to his starting position\n", plyr->name, plyr->name);
+                return INFINITE_LOOP;
+            }
             plyr->player_pos = stair0_dest_cell;
             return check_landed_cell(plyr, path_cost);
         }
         else if (stair1_matches && cell->data.stairs[1]->direction != wrong_dir)
         {
-            add_event(TAKE_STAIR, plyr->player_pos, stair1_dest_cell);
+            if(!add_event(TAKE_STAIR, plyr->player_pos, stair1_dest_cell))
+            {
+                printf("Player %c moves through an infinite loop. Player %c move to his starting position\n", plyr->name, plyr->name);
+                return INFINITE_LOOP;
+            }
             plyr->player_pos = stair1_dest_cell;
             return check_landed_cell(plyr, path_cost);
         }
@@ -1372,7 +1397,11 @@ HandlerResult handle_stair_end(Player* plyr, int* path_cost)
 
 HandlerResult handle_pole_enter(Player* plyr, int* path_cost)
 {
-    add_event(TAKE_POLE, plyr->player_pos, plyr->player_pos->data.pole_data.dest_cell);
+    if(!add_event(TAKE_POLE, plyr->player_pos, plyr->player_pos->data.pole_data.dest_cell))
+    {
+        printf("Player %c moves through an infinite loop. Player %c move to his starting position\n", plyr->name, plyr->name);
+        return INFINITE_LOOP;
+    }
     plyr->player_pos = plyr->player_pos->data.pole_data.dest_cell;
     return check_landed_cell(plyr, path_cost);
 }
@@ -1534,65 +1563,111 @@ void process_movement_blocked(Player* plyr, Cell* position_before_move)
     print_output(COMPLETE_MOVE, plyr, -2, NULL, NULL);
 }
 
+/**
+ * @brief Processes the action associated with the player's current cell.
+ * 
+ * Checks the cell's type flags, executes the corresponding handler, and 
+ * returns whether to continue movement or stop. Based on the HandlerResult
+ * the function returns bool.
+ * 
+ * @param plyr Pointer to the Player structure.
+ * @param path_cost Pointer to the current accumulated path cost.
+ * @param position_before_move The cell position before the current step (for blocked movement).
+ * @return true if the player can continue moving; false otherwise.
+ */
+static bool handle_cell_action(Player* plyr, int* path_cost, Cell* position_before_move)
+{
+    for (int j = 0; j < sizeof(actions)/sizeof(actions[0]); j++)
+    {
+        if (plyr->player_pos->celltypes & actions[j].flag)
+        {
+            HandlerResult result = actions[j].handler(plyr, path_cost);
+
+            switch (result)
+            {
+                case CONTINUE_STEP:
+                    return true;
+                case ABORT_MOVE:
+                    process_movement_blocked(plyr, position_before_move);
+                    return false;
+                case WIN_GAME:
+                    game_on = false;
+                    add_event(PLAYER_WIN, plyr->player_pos, NULL);
+                    print_event_list(plyr, *path_cost);
+                    return false;
+                case PLACED_ON_BAWANA:
+                    print_event_list(plyr, *path_cost);
+                    player_to_bawana(plyr);
+                    return false;
+                case INFINITE_LOOP:
+                default:
+                    reset_event_list();
+                    plyr->player_pos = plyr->starting_cell;
+                    plyr->player_state = INACTIVE;
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+
+/**
+ * @brief Handles traversal across cells for a player's movement turn.
+ * 
+ * This function moves the player cell-by-cell according to the rolled value and move factor.
+ * At each step, it checks for cell-based actions, boundaries, and special effects like
+ * winning or being placed on Bawana. It also tracks the path cost and updates events.
+ * 
+ * @param plyr Pointer to the Player structure representing the current player.
+ * @param move_direction The direction in which the player is moving.
+ * @param player_index Index of the player in the player array.
+ * @param move_factor Multiplier applied to the player's rolled move value.
+ */
 void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int player_index, int move_factor)
 {
     Cell* position_before_move = plyr->player_pos;
     int path_cost = 0;
-    
-    for(int step = 0; step < (plyr->move_value * move_factor); step++)
+    bool move_aborted = false;
+
+    int total_steps = plyr->move_value * move_factor;
+
+    for(int step = 0; step < total_steps; step++)
     {
+        // Try to move one cell
         if(move_one_cell(plyr, move_direction) != NO_BOUNDS)
         {
             process_movement_blocked(plyr, position_before_move);
-            goto partial_move;    //terminates step by exiting the for loop
+            move_aborted = true;
+            break;
         }
-        
-        if(plyr->player_pos->is_valid)
-        {
-            for(int j = 0; j < sizeof(actions)/sizeof(actions[0]); j++)
-            {
-                if(plyr->player_pos->celltypes & actions[j].flag)
-                {
-                    HandlerResult step_result = actions[j].handler(plyr, &path_cost);
-                    if(step_result == CONTINUE_STEP)
-                    {
-                        break;  //take the next step
-                    }
-                    else if(step_result == ABORT_MOVE)
-                    {
-                        process_movement_blocked(plyr, position_before_move);
-                        goto partial_move;  
-                    }
-                    else if(step_result == WIN_GAME)    
-                    {
-                        game_on = false;
-                        add_event(PLAYER_WIN, plyr->player_pos, NULL);
-                        print_event_list(plyr, path_cost);
-                        return;
-                    }
-                    else    //PLACED_ON_BAWANA
-                    {
-                        print_event_list(plyr, path_cost);
-                        player_to_bawana(plyr);
-                        return;
-                    }
-                }   
-            }
-        }
-        else
+
+        // Validate current position
+        if(!plyr->player_pos->is_valid)
         {
             process_movement_blocked(plyr, position_before_move);
-            goto partial_move;
+            move_aborted = true;
+            break;
         }
-    }    
-    capture_player(player_index);
-    plyr->mp_score += path_cost;
-    add_event(COMPLETE_MOVE, NULL, NULL);
-    print_event_list(plyr, path_cost);
-
-    partial_move:;
+        
+        // Handle special actions tied to cell types
+        if(!handle_cell_action(plyr, &path_cost, position_before_move))
+        {
+            move_aborted = true;
+            break;
+        }
+    }   
+    
+    if(!move_aborted)
+    {
+        capture_player(player_index);
+        plyr->mp_score += path_cost;
+        add_event(COMPLETE_MOVE, NULL, NULL);
+        print_event_list(plyr, path_cost);
+    }
+    
     plyr->throw_count++;
 
+    // If player's score drops to zero or below player is send to Bawana
     if(plyr->mp_score <= 0)
     {
         plyr->player_pos = &cells[0][(rand() % 3) + 7][(rand() % 4) + 21];  //place player on a random cell in bawana
@@ -1601,10 +1676,19 @@ void handle_cell_traversal(Player* plyr, PlayerDirection move_direction,int play
     }
 }
 
-void handle_player_state_movement(Player* plyr, int player_index)
+/**
+ * @brief Initiates a player's move at the start of their turn.
+ * 
+ * Rolls the movement dice to determine the player's move value. 
+ * If the player has rolled 4 times, their movement direction is also determined.
+ * The function then adds the appropriate event to the event list.
+ * 
+ * @param plyr Pointer to the Player structure representing the current player.
+ */
+static void start_player_move(Player* plyr)
 {
-    /* Start the Move by rolling the dice and adding the event to the queue */
     plyr->move_value = movement_dice();
+    // Print a blank line to visually separate each player's output in each round.
     printf("\n");
 
     if(plyr->throw_count % 4 ==0 && plyr->throw_count > 0)
@@ -1613,76 +1697,140 @@ void handle_player_state_movement(Player* plyr, int player_index)
         add_event(START_MOVE_WITH_DIRECTION, NULL, NULL);
     }
     else add_event(START_MOVE, NULL, NULL);
+}
 
-    /* Handle the player move according to the player state */
-    if(plyr->player_state == ACTIVE)
+/**
+ * @brief Handles a player's move when they are in the INACTIVE state.
+ * 
+ * If the player rolls a 6, they leave the starting area and become active.
+ * Otherwise, the player remains at their spawn position.
+ * 
+ * @param plyr Pointer to the Player structure representing the current player.
+ */
+static void handle_inactive_state(Player* plyr)
+{
+    if(plyr->move_value == 6)
     {
-        handle_cell_traversal(plyr, plyr->direction, player_index, 1);
+        plyr->player_pos = plyr->first_cell;
+        plyr->player_state = ACTIVE;
+        print_output(EXIT_STARTING_AREA, plyr, 0, NULL, NULL);
     }
     else
     {
-        if(plyr->player_state == INACTIVE)
-        {
-            if(plyr->move_value == 6)
-            {
-                plyr->player_pos = plyr->first_cell;
-                plyr->player_state = ACTIVE;
-                print_output(EXIT_STARTING_AREA, plyr, 0, NULL, NULL);
-            }
-            else
-            {
-                print_output(REMAIN_AT_SPAWN, plyr, 0, NULL, NULL);
-            }
-        } 
-        else
-        { 
-            if(plyr->player_state == FOOD_POISONED)
-            {
-                plyr->throw_count++;
-                if(plyr->effect_turns == 0)
-                {
-                    plyr->player_pos = &cells[0][(rand() % 3) + 7][(rand() % 4) + 21];
-                    printf("Player %c is now fit to proceed form the food poisoning episode and now placed on a %s and the effects take place.\n", plyr->name, get_bawana_cell_type(plyr->player_pos->celltypes));
-                    player_to_bawana(plyr);
-                    reset_event_list();
-                    return;
-                }
-                printf("Player %c is still food poisoned and misses the turn.\n", plyr->name);
-                plyr->effect_turns--;
-            }
-            else
-            {
-                if(plyr->player_state == DISORIENTED)
-                {
-                    plyr->throw_count++;
-                    if(plyr->effect_turns == 0)
-                    {
-                        plyr->player_state = ACTIVE;
-                        printf("Player %c has recovered from disorientation.\n", plyr->name);
-                        handle_cell_traversal(plyr, plyr->direction, player_index, 1);
-                        reset_event_list();
-                        return;
-                    }
-                    plyr->effect_turns--;
-                    PlayerDirection rand_dir = generate_random_player_direction();
-                    handle_cell_traversal(plyr, rand_dir, player_index, 1);
-                    printf("Player %c rolls and %d on the movement dice and is disoriented and move in the %s and moves %d cells and is placed at the [%d, %d, %d].\n", plyr->name, plyr->move_value, get_player_dir_string(rand_dir), plyr->move_value, plyr->player_pos->floor, plyr->player_pos->width, plyr->player_pos->length);
-                }
-                else 
-                {
-                    if(plyr->player_state == TRIGGERED)
-                    {
-                        handle_cell_traversal(plyr, plyr->direction, player_index, 2);
-                        printf("Player %c is triggered and rolls and %d on the movement dice and move in the %s and moves %d cells and is placed at the [%d, %d, %d].\n",  plyr->name, plyr->move_value, get_player_dir_string(plyr->direction), (plyr->move_value)*2, plyr->player_pos->floor, plyr->player_pos->width, plyr->player_pos->length);
-                    }
-                    else
-                    {
-                        printf("PLYR_STATE_MOVE_ERR : Please Contact support@example.com\n");
-                    }
-                }
-            }
-        }
+        print_output(REMAIN_AT_SPAWN, plyr, 0, NULL, NULL);
     }
+}
+
+/**
+ * @brief Handles the player's turn while under the FOOD_POISONED effect.
+ * 
+ * Increments the player's throw count each turn. 
+ * When the effect wears off, the player is moved to a random position on Bawana, 
+ * and the event list is reset.
+ * If the effect persists, the player misses their turn.
+ * 
+ * @param plyr Pointer to the Player structure representing the current player.
+ */
+static void handle_food_poisoned_state(Player* plyr)
+{
+    plyr->throw_count++;
+    if(plyr->effect_turns == 0)
+    {
+        plyr->player_pos = &cells[0][(rand() % 3) + 7][(rand() % 4) + 21];
+        printf("Player %c is now fit to proceed form the food poisoning episode and now placed on a %s and the effects take place.\n", 
+            plyr->name, get_bawana_cell_type(plyr->player_pos->celltypes));
+        player_to_bawana(plyr);
+        reset_event_list();
+        return;
+    }
+    printf("Player %c is still food poisoned and misses the turn.\n", plyr->name);
+    plyr->effect_turns--;
+}
+
+/**
+ * @brief Handles the player's movement and state while DISORIENTED.
+ * 
+ * Increments the player's throw count each turn. 
+ * If the disorientation effect has ended, the player becomes active again 
+ * and moves normally. Otherwise, a random direction is generated and the player 
+ * moves accordingly, with their new position and movement details printed.
+ * 
+ * @param plyr Pointer to the Player structure representing the current player.
+ * @param player_index Index of the player in the player array.
+ */
+static void handle_disoriented_state(Player* plyr, int player_index)
+{
+    plyr->throw_count++;
+    if(plyr->effect_turns == 0)
+    {
+        plyr->player_state = ACTIVE;
+        printf("Player %c has recovered from disorientation.\n", plyr->name);
+        handle_cell_traversal(plyr, plyr->direction, player_index, 1);
+        reset_event_list();
+        return;
+    }
+    plyr->effect_turns--;
+    PlayerDirection rand_dir = generate_random_player_direction();
+    handle_cell_traversal(plyr, rand_dir, player_index, 1);
+    printf("Player %c rolls and %d on the movement dice and is disoriented and move in the %s and moves %d cells and is placed at the [%d, %d, %d].\n", 
+        plyr->name, plyr->move_value, get_player_dir_string(rand_dir), plyr->move_value, plyr->player_pos->floor, plyr->player_pos->width, 
+        plyr->player_pos->length);               
+}
+
+/**
+ *
+ * @brief Handles the movement for a player in the TRIGGERED state.
+ * 
+ * Involves traversing cells at double the normal speed (using a multiplier of 2).
+ * It calls the cell traversal function and then prints a message detailing the
+ * player's roll, direction, total movement (doubled), and final position.
+ * 
+ * @param plyr Pointer to the Player structure representing the current player.
+ * @param player_index Index of the player in the player array.
+ */
+static void handle_triggered_state(Player* plyr, int player_index)
+{
+    handle_cell_traversal(plyr, plyr->direction, player_index, 2);
+    printf("Player %c is triggered and rolls and %d on the movement dice and move in the %s and moves %d cells and is placed at the [%d, %d, %d].\n",  
+        plyr->name, plyr->move_value, get_player_dir_string(plyr->direction), (plyr->move_value)*2, plyr->player_pos->floor, plyr->player_pos->width, 
+        plyr->player_pos->length);       
+}
+
+/**
+ * @brief Handles player movement based on their current state.
+ * 
+ * Rolls dice for movement, updates direction periodically, adds events,
+ * and processes movement or effects depending on the player's state.
+ * 
+ * @param plyr Pointer to the Player structure representing the current player.
+ * @param player_index Index of the player in the player array.
+ */
+void handle_player_state_movement(Player* plyr, int player_index)
+{
+    start_player_move(plyr);
+
+    /* Handle the player move according to the player state */
+    switch(plyr->player_state)
+    {
+        case ACTIVE:
+            handle_cell_traversal(plyr, plyr->direction, player_index, 1);
+            break;
+        case INACTIVE:
+            handle_inactive_state(plyr);
+            break;
+        case FOOD_POISONED:
+            handle_food_poisoned_state(plyr);
+            break;
+        case DISORIENTED:
+            handle_disoriented_state(plyr, player_index);
+            break;
+        case TRIGGERED:
+            handle_triggered_state(plyr, player_index);
+            break;
+        default:
+            printf("PLYR_STATE_MOVE_ERR : Please Contact support@example.com\n");
+    }
+
     reset_event_list();
 }
 
