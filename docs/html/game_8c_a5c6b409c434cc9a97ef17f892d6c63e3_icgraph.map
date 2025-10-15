@@ -1,0 +1,14 @@
+<map id="handle_stair_start" name="handle_stair_start">
+<area shape="rect" id="Node000001" title=" " alt="" coords="523,81,648,108"/>
+<area shape="rect" id="Node000002" href="$game_8c.html#a2d8c9e255e9b0843a9d04801dc2965f1" title=" " alt="" coords="347,56,475,83"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="507,86,475,81,476,76,508,81"/>
+<area shape="rect" id="Node000003" href="$game_8c.html#ab86d267167c3f530b57c2317f67c1c1f" title=" " alt="" coords="173,5,299,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="331,58,261,35,263,30,333,53"/>
+<area shape="rect" id="Node000004" href="$game_8c.html#a4bd410796182a16bc9aab6332abc7f8e" title=" " alt="" coords="190,107,282,133"/>
+<area shape="poly" id="edge4_Node000002_Node000004" title=" " alt="" coords="348,90,282,109,281,104,347,85"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="315,30,386,53,384,58,314,35"/>
+<area shape="poly" id="edge7_Node000004_Node000001" title=" " alt="" coords="297,113,523,96,523,102,297,118"/>
+<area shape="rect" id="Node000005" href="$game_8c.html#aaeebcfbe9b816ad44be255e82424d31c" title=" " alt="" coords="5,81,125,108"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="174,114,125,106,126,101,175,108"/>
+<area shape="poly" id="edge6_Node000005_Node000002" title=" " alt="" coords="140,87,346,71,347,77,140,92"/>
+</map>

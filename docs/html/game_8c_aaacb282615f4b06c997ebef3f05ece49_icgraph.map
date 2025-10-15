@@ -1,0 +1,15 @@
+<map id="load_walls" name="load_walls">
+<area shape="rect" id="Node000001" title=" " alt="" coords="851,5,934,32"/>
+<area shape="rect" id="Node000002" href="$game_8c.html#ab555ded8a57822e3720e00fbcaf18600" title=" " alt="" coords="709,5,803,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="836,21,804,21,804,16,836,16"/>
+<area shape="rect" id="Node000003" href="$game_8c.html#a45d271a15429f7547c53b34367d3d705" title=" " alt="" coords="500,5,661,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="693,21,662,21,662,16,693,16"/>
+<area shape="rect" id="Node000004" href="$game_8c.html#aaa20a8d10242c7d493dae405226d6d81" title=" " alt="" coords="361,5,452,32"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="484,21,452,21,452,16,484,16"/>
+<area shape="rect" id="Node000005" href="$game_8c.html#a09fe91d86a6a65590a7f155406d389b4" title=" " alt="" coords="235,5,313,32"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="346,21,314,21,314,16,346,16"/>
+<area shape="rect" id="Node000006" href="$game_8c.html#a17471c537659747b95c3c2aa8b22790b" title=" " alt="" coords="103,5,187,32"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="219,21,187,21,187,16,219,16"/>
+<area shape="rect" id="Node000007" href="$main_8c.html#ae66f6b31b5ad750f1fe042a706a4e3d4" title=" " alt="" coords="5,5,55,32"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="87,21,55,21,55,16,87,16"/>
+</map>

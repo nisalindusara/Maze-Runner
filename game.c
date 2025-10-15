@@ -1259,7 +1259,8 @@ HandlerResult handle_wall(Player* plyr, int* ignore_val)
     return ABORT_MOVE;
 }
 
-HandlerResult handle_stair(Player* plyr, StairDirection wrong_dir, Cell* stair0_dest_cell, Cell* stair1_dest_cell, int* path_cost, StairCheckType check_type)
+HandlerResult handle_stair(Player* plyr, StairDirection wrong_dir, Cell* stair0_dest_cell, Cell* stair1_dest_cell, 
+    int* path_cost, StairCheckType check_type)
 {
     Cell* cell = plyr->player_pos;
     if (cell->data.stair_count == 1)

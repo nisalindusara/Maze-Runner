@@ -1,0 +1,9 @@
+<map id="handle_inactive_state" name="handle_inactive_state">
+<area shape="rect" id="Node000001" title="Handles a player&#39;s move when they are in the INACTIVE state." alt="" coords="5,31,153,57"/>
+<area shape="rect" id="Node000002" href="$game_8c.html#a8d1bd7dded40465940deead393d86ae1" title=" " alt="" coords="201,31,290,57"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="153,41,185,41,185,47,153,47"/>
+<area shape="rect" id="Node000003" href="$game_8c.html#a2d030c2a190f4a2cb24d31662611da8a" title=" " alt="" coords="338,5,488,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="290,35,323,30,323,35,291,40"/>
+<area shape="rect" id="Node000004" href="$game_8c.html#a30fc4767ab9cf62a18d9294dc581afa0" title=" " alt="" coords="342,56,484,83"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="291,48,328,54,327,59,290,53"/>
+</map>

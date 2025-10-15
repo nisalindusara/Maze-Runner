@@ -91,11 +91,11 @@ $(function(){initNavTree('game_8h_source.html','',''); });
   <div class="headertitle"><div class="title">game.h</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="preprocessor">#ifndef GAME_H</span></div>
+<a href="game_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="preprocessor">#ifndef GAME_H</span></div>
 <div class="line"><a id="l00002" name="l00002"></a><span class="lineno">    2</span><span class="preprocessor">#define GAME_H</span></div>
 <div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span> </div>
 <div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span><span class="comment">/* -------------------- PUBLIC API -------------------- */</span></div>
-<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="keywordtype">void</span> play_game(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="keywordtype">void</span> <a class="code hl_function" href="game_8h.html#a191e479e7bcd63ad44a072e0b41a9a31">play_game</a>(<span class="keywordtype">void</span>);</div>
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span> </div>
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="comment">/* -------------------- INTERNAL TYPES &amp; FUNCTIONS -------------------- */</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#ifdef GAME_INTERNAL   </span><span class="comment">// only visible to game.c</span></div>
@@ -209,7 +209,7 @@ $(function(){initNavTree('game_8h_source.html','',''); });
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>    Stair* stairs[2];</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    PoleData pole_data;</div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    MovementPointData mpdata;</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>    <span class="keywordtype">short</span> stair_count;</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>    <span class="keywordtype">short</span> <a class="code hl_variable" href="game_8c.html#af1ffbdc06a4d2bf3390c0c0f43156cfe">stair_count</a>;</div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    <span class="keywordtype">bool</span> access_pole;</div>
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>    <span class="keywordtype">bool</span> has_movementpoint;</div>
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>} CellData;</div>
@@ -223,7 +223,7 @@ $(function(){initNavTree('game_8h_source.html','',''); });
 <div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>    CellData data;</div>
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>}Cell;</div>
 <div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span> </div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span><span class="keyword">extern</span> Cell cells[NUM_OF_FLOORS][MAX_WIDTH][MAX_LENGTH];</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span><span class="keyword">extern</span> Cell <a class="code hl_variable" href="game_8c.html#a24cb385a3311c6fe614c18297fe9b26b">cells</a>[NUM_OF_FLOORS][MAX_WIDTH][MAX_LENGTH];</div>
 <div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span> </div>
 <div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span><span class="comment">/* -------------------- PLAYER Data -------------------- */</span></div>
 <div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span><span class="keyword">typedef</span> <span class="keyword">enum</span> </div>
@@ -265,7 +265,7 @@ $(function(){initNavTree('game_8h_source.html','',''); });
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>    <span class="keywordtype">char</span> name;</div>
 <div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>} PlayerInit;</div>
 <div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span> </div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span><span class="keyword">extern</span> Player players[NUM_OF_PLAYERS];</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span><span class="keyword">extern</span> Player <a class="code hl_variable" href="game_8c.html#a36271b3ff4f7d065fa422a4c78d8ea6f">players</a>[NUM_OF_PLAYERS];</div>
 <div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span> </div>
 <div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span><span class="comment">/* -------------------- PLAYER MOVE Data -------------------- */</span></div>
 <div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span><span class="keyword">typedef</span> <span class="keyword">struct </span></div>
@@ -331,7 +331,7 @@ $(function(){initNavTree('game_8h_source.html','',''); });
 <div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>} StairCheckType;</div>
 <div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span> </div>
 <div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span><span class="comment">/* -------------------- GLOBAL VARIABLES -------------------- */</span></div>
-<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span><span class="keyword">extern</span> <span class="keywordtype">int</span> game_round;</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span><span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code hl_variable" href="game_8c.html#a5a40ae95327b98b6a7fb2ea288575675">game_round</a>;</div>
 <div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>Cell* cell_flag;</div>
 <div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>Stair** stairs_array;     <span class="comment">//dynamic array of all stairs      </span></div>
 <div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>Cell* bawana_entrance_cell_ptr;</div>
@@ -351,18 +351,24 @@ $(function(){initNavTree('game_8h_source.html','',''); });
 <div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>} PlayerStart;</div>
 <div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span> </div>
 <div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>PlayerStart player_starts[NUM_OF_PLAYERS]; <span class="comment">// populate with each player&#39;s starting cell</span></div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span><span class="keywordtype">bool</span> check_flag_reachability_for_all_players(Cell* flag_cell);</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span><span class="keywordtype">bool</span> <a class="code hl_function" href="game_8c.html#ac42a7f77b60b3eb190c38302365327de">check_flag_reachability_for_all_players</a>(Cell* flag_cell);</div>
 <div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span> </div>
 <div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span><span class="preprocessor">#endif  </span><span class="comment">//GAME_INTERNAL</span></div>
 <div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span> </div>
 <div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span><span class="preprocessor">#endif  </span><span class="comment">//GAME_H</span></div>
+<div class="ttc" id="agame_8c_html_a24cb385a3311c6fe614c18297fe9b26b"><div class="ttname"><a href="game_8c.html#a24cb385a3311c6fe614c18297fe9b26b">cells</a></div><div class="ttdeci">Cell cells[NUM_OF_FLOORS][MAX_WIDTH][MAX_LENGTH]</div><div class="ttdef"><b>Definition</b> game.c:7</div></div>
+<div class="ttc" id="agame_8c_html_a36271b3ff4f7d065fa422a4c78d8ea6f"><div class="ttname"><a href="game_8c.html#a36271b3ff4f7d065fa422a4c78d8ea6f">players</a></div><div class="ttdeci">Player players[NUM_OF_PLAYERS]</div><div class="ttdef"><b>Definition</b> game.c:6</div></div>
+<div class="ttc" id="agame_8c_html_a5a40ae95327b98b6a7fb2ea288575675"><div class="ttname"><a href="game_8c.html#a5a40ae95327b98b6a7fb2ea288575675">game_round</a></div><div class="ttdeci">int game_round</div><div class="ttdef"><b>Definition</b> game.c:10</div></div>
+<div class="ttc" id="agame_8c_html_ac42a7f77b60b3eb190c38302365327de"><div class="ttname"><a href="game_8c.html#ac42a7f77b60b3eb190c38302365327de">check_flag_reachability_for_all_players</a></div><div class="ttdeci">bool check_flag_reachability_for_all_players(Cell *flag_cell)</div><div class="ttdef"><b>Definition</b> game.c:1872</div></div>
+<div class="ttc" id="agame_8c_html_af1ffbdc06a4d2bf3390c0c0f43156cfe"><div class="ttname"><a href="game_8c.html#af1ffbdc06a4d2bf3390c0c0f43156cfe">stair_count</a></div><div class="ttdeci">int stair_count</div><div class="ttdef"><b>Definition</b> game.c:8</div></div>
+<div class="ttc" id="agame_8h_html_a191e479e7bcd63ad44a072e0b41a9a31"><div class="ttname"><a href="game_8h.html#a191e479e7bcd63ad44a072e0b41a9a31">play_game</a></div><div class="ttdeci">void play_game(void)</div><div class="ttdef"><b>Definition</b> game.c:2003</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>game.h</b></li>
+    <li class="navelem"><a href="game_8h.html">game.h</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.14.0 </li>
   </ul>
 </div>

@@ -1,0 +1,16 @@
+<map id="handle_food_poisoned_state" name="handle_food_poisoned_state">
+<area shape="rect" id="Node000001" title="Handles the player&#39;s turn while under the FOOD_POISONED effect." alt="" coords="5,23,156,65"/>
+<area shape="rect" id="Node000002" href="$game_8c.html#a2d030c2a190f4a2cb24d31662611da8a" title=" " alt="" coords="548,5,699,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="156,23,203,16,291,10,379,8,533,11,532,16,379,13,291,15,204,21,157,29"/>
+<area shape="rect" id="Node000003" href="$game_8c.html#a66a08b9b62ea3dc9fb76ba599ce1bbb0" title=" " alt="" coords="204,31,330,57"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="156,41,188,41,188,47,156,47"/>
+<area shape="rect" id="Node000007" href="$game_8c.html#ae70b910cfd055ca33c1f32af4bf5a27e" title=" " alt="" coords="210,81,324,108"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="157,62,201,74,200,79,155,67"/>
+<area shape="rect" id="Node000004" href="$game_8c.html#af1e0fae588e8107c64216d20538bdde7" title=" " alt="" coords="378,31,500,57"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="330,41,363,41,363,47,330,47"/>
+<area shape="rect" id="Node000005" href="$game_8c.html#a8d1bd7dded40465940deead393d86ae1" title=" " alt="" coords="394,81,484,108"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="316,55,381,75,379,80,314,61"/>
+<area shape="poly" id="edge5_Node000005_Node000002" title=" " alt="" coords="473,78,574,36,576,41,475,83"/>
+<area shape="rect" id="Node000006" href="$game_8c.html#a30fc4767ab9cf62a18d9294dc581afa0" title=" " alt="" coords="553,81,694,108"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="484,92,537,92,537,97,484,97"/>
+</map>

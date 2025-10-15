@@ -1,0 +1,14 @@
+<map id="log_file_error" name="log_file_error">
+<area shape="rect" id="Node000001" title=" " alt="" coords="500,31,595,57"/>
+<area shape="rect" id="Node000002" href="$game_8c.html#a30f1dcd8498240b5d21daafdfbe87588" title=" " alt="" coords="237,5,311,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="484,41,312,25,312,19,485,36"/>
+<area shape="rect" id="Node000005" href="$game_8c.html#aaa20a8d10242c7d493dae405226d6d81" title=" " alt="" coords="361,56,452,83"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="485,58,453,64,452,59,484,53"/>
+<area shape="rect" id="Node000003" href="$game_8c.html#a17471c537659747b95c3c2aa8b22790b" title=" " alt="" coords="103,31,187,57"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="222,32,188,38,187,33,221,26"/>
+<area shape="rect" id="Node000004" href="$main_8c.html#ae66f6b31b5ad750f1fe042a706a4e3d4" title=" " alt="" coords="5,31,55,57"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="87,47,55,47,55,41,87,41"/>
+<area shape="rect" id="Node000006" href="$game_8c.html#a09fe91d86a6a65590a7f155406d389b4" title=" " alt="" coords="235,56,313,83"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="346,72,314,72,314,67,346,67"/>
+<area shape="poly" id="edge6_Node000006_Node000003" title=" " alt="" coords="219,61,187,55,188,50,220,56"/>
+</map>

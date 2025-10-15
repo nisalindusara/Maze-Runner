@@ -1,0 +1,13 @@
+<map id="print_event_list" name="print_event_list">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,56,115,83"/>
+<area shape="rect" id="Node000002" href="$game_8c.html#a74a0d930d019a2c8ada7905e6c2e2512" title=" " alt="" coords="163,5,283,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="105,53,162,35,164,40,106,58"/>
+<area shape="rect" id="Node000003" href="$game_8c.html#a8d1bd7dded40465940deead393d86ae1" title=" " alt="" coords="178,56,268,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="115,67,163,67,163,72,115,72"/>
+<area shape="rect" id="Node000006" href="$game_8c.html#ae70b910cfd055ca33c1f32af4bf5a27e" title=" " alt="" coords="166,107,280,133"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="106,81,164,99,162,104,105,86"/>
+<area shape="rect" id="Node000004" href="$game_8c.html#a2d030c2a190f4a2cb24d31662611da8a" title=" " alt="" coords="331,31,481,57"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="268,61,315,54,316,59,268,66"/>
+<area shape="rect" id="Node000005" href="$game_8c.html#a30fc4767ab9cf62a18d9294dc581afa0" title=" " alt="" coords="336,81,477,108"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="268,73,320,80,320,85,268,78"/>
+</map>

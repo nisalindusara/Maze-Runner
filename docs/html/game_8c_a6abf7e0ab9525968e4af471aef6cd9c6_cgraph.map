@@ -1,0 +1,7 @@
+<map id="init_bawana" name="init_bawana">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,31,96,57"/>
+<area shape="rect" id="Node000002" href="$game_8c.html#a81dc6e01e49041dd9ee11988fc5f333d" title=" " alt="" coords="144,5,311,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="96,35,128,30,128,36,97,40"/>
+<area shape="rect" id="Node000003" href="$game_8c.html#a140fec671cb67268568fbc16ac9ffa07" title=" " alt="" coords="178,56,276,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="97,48,164,58,163,63,96,53"/>
+</map>

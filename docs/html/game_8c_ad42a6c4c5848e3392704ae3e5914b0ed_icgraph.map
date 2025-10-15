@@ -1,0 +1,9 @@
+<map id="get_random_stair_direction" name="get_random_stair_direction">
+<area shape="rect" id="Node000001" title=" " alt="" coords="434,5,612,32"/>
+<area shape="rect" id="Node000002" href="$game_8c.html#a1e74a709ef984863c79ccd47e9bca639" title=" " alt="" coords="235,5,386,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="419,21,387,21,387,16,419,16"/>
+<area shape="rect" id="Node000003" href="$game_8c.html#a17471c537659747b95c3c2aa8b22790b" title=" " alt="" coords="103,5,187,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="219,21,188,21,188,16,219,16"/>
+<area shape="rect" id="Node000004" href="$main_8c.html#ae66f6b31b5ad750f1fe042a706a4e3d4" title=" " alt="" coords="5,5,55,32"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="87,21,55,21,55,16,87,16"/>
+</map>

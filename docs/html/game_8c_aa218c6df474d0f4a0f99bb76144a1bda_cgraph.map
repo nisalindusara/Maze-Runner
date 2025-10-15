@@ -1,0 +1,13 @@
+<map id="start_player_move" name="start_player_move">
+<area shape="rect" id="Node000001" title="Initiates a player&#39;s move at the start of their turn." alt="" coords="5,81,134,108"/>
+<area shape="rect" id="Node000002" href="$game_8c.html#a046602dc3a141fe858ec0c2455c4b779" title=" " alt="" coords="198,31,279,57"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="116,78,182,58,184,63,117,83"/>
+<area shape="rect" id="Node000005" href="$game_8c.html#aed3809f266a6fc07b85d7f66a8d22b86" title=" " alt="" coords="188,81,289,108"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="134,92,172,92,172,97,134,97"/>
+<area shape="rect" id="Node000006" href="$game_8c.html#a6db50915cf812f231f6a8e5280881bec" title=" " alt="" coords="182,132,295,159"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="117,106,177,124,176,129,116,111"/>
+<area shape="rect" id="Node000003" href="$game_8c.html#a74a0d930d019a2c8ada7905e6c2e2512" title=" " alt="" coords="343,5,463,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="279,35,327,28,328,33,280,40"/>
+<area shape="rect" id="Node000004" href="$game_8c.html#a7fdc736a13c725ade9171858b91d675a" title=" " alt="" coords="352,56,454,83"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="280,48,338,57,337,62,279,53"/>
+</map>

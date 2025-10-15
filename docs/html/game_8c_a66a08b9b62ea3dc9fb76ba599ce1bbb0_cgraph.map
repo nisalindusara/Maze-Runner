@@ -1,0 +1,11 @@
+<map id="player_to_bawana" name="player_to_bawana">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,31,132,57"/>
+<area shape="rect" id="Node000002" href="$game_8c.html#af1e0fae588e8107c64216d20538bdde7" title=" " alt="" coords="180,5,302,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="132,32,164,27,165,33,132,37"/>
+<area shape="rect" id="Node000003" href="$game_8c.html#a8d1bd7dded40465940deead393d86ae1" title=" " alt="" coords="196,56,286,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="132,51,181,58,180,63,132,56"/>
+<area shape="rect" id="Node000004" href="$game_8c.html#a2d030c2a190f4a2cb24d31662611da8a" title=" " alt="" coords="350,31,500,57"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="286,61,334,54,335,59,287,66"/>
+<area shape="rect" id="Node000005" href="$game_8c.html#a30fc4767ab9cf62a18d9294dc581afa0" title=" " alt="" coords="354,81,496,108"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="287,73,339,80,338,85,286,78"/>
+</map>

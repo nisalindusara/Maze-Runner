@@ -1,0 +1,7 @@
+<map id="add_event" name="add_event">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,31,87,57"/>
+<area shape="rect" id="Node000002" href="$game_8c.html#a74a0d930d019a2c8ada7905e6c2e2512" title=" " alt="" coords="135,5,255,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="87,34,119,29,120,34,88,40"/>
+<area shape="rect" id="Node000003" href="$game_8c.html#a7fdc736a13c725ade9171858b91d675a" title=" " alt="" coords="144,56,246,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="88,48,129,55,128,61,87,54"/>
+</map>

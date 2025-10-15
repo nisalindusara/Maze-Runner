@@ -1,0 +1,15 @@
+<map id="check_flag_reachability_for_all_players" name="check_flag_reachability_for_all_players">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,73,163,116"/>
+<area shape="rect" id="Node000002" href="$game_8c.html#ad680566bf9102e07eb7ac57d9afe2b52" title=" " alt="" coords="216,5,286,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="132,70,205,36,207,41,134,75"/>
+<area shape="rect" id="Node000003" href="$game_8c.html#a24e1bd3f43bdce98c427deb1b8d1cfd9" title=" " alt="" coords="339,56,420,83"/>
+<area shape="poly" id="edge7_Node000001_Node000003" title=" " alt="" coords="163,85,323,71,324,77,163,91"/>
+<area shape="rect" id="Node000004" href="$game_8c.html#a2ba8229196ca56b283ce196884044dcf" title=" " alt="" coords="216,107,286,133"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="163,104,200,110,200,115,163,109"/>
+<area shape="rect" id="Node000006" href="$game_8c.html#a9d0af5f3ea6688f5d5f6dab129acd241" title=" " alt="" coords="211,157,291,184"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="134,114,207,148,205,153,132,119"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="288,30,331,47,329,52,286,35"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="286,104,329,86,331,91,288,109"/>
+<area shape="rect" id="Node000005" href="$game_8c.html#af2534dafd850e47e5327cf51bcbb9f23" title=" " alt="" coords="348,107,411,133"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="287,117,333,117,333,123,287,123"/>
+</map>

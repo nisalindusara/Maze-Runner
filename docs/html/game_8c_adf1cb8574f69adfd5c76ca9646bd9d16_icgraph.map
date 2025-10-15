@@ -1,0 +1,16 @@
+<map id="pick_stair_heuristic" name="pick_stair_heuristic">
+<area shape="rect" id="Node000001" title=" " alt="" coords="668,56,801,83"/>
+<area shape="rect" id="Node000002" href="$game_8c.html#a4bd410796182a16bc9aab6332abc7f8e" title=" " alt="" coords="528,56,620,83"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="652,72,620,72,620,67,652,67"/>
+<area shape="rect" id="Node000003" href="$game_8c.html#aaeebcfbe9b816ad44be255e82424d31c" title=" " alt="" coords="358,5,478,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="515,53,461,35,462,30,517,48"/>
+<area shape="rect" id="Node000006" href="$game_8c.html#a5c6b409c434cc9a97ef17f892d6c63e3" title=" " alt="" coords="356,56,480,83"/>
+<area shape="poly" id="edge7_Node000002_Node000006" title=" " alt="" coords="513,72,480,72,480,67,513,67"/>
+<area shape="rect" id="Node000004" href="$game_8c.html#a2d8c9e255e9b0843a9d04801dc2965f1" title=" " alt="" coords="180,56,308,83"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="356,40,293,58,292,53,354,34"/>
+<area shape="poly" id="edge6_Node000004_Node000002" title=" " alt="" coords="310,84,356,92,418,97,480,92,531,81,532,86,481,97,418,102,356,97,309,89"/>
+<area shape="rect" id="Node000005" href="$game_8c.html#ab86d267167c3f530b57c2317f67c1c1f" title=" " alt="" coords="5,56,132,83"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="164,81,132,81,132,75,164,76"/>
+<area shape="poly" id="edge5_Node000005_Node000004" title=" " alt="" coords="147,58,179,58,179,63,147,63"/>
+<area shape="poly" id="edge8_Node000006_Node000004" title=" " alt="" coords="340,72,309,72,309,67,340,67"/>
+</map>
